@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from src.graph import Graph
+from src.graph import Graph, Node
 
 
 def main() -> None:
@@ -27,13 +27,16 @@ def main() -> None:
             line_index += 1
 
         graph = Graph(matrix, (start_i, start_j), (goal_i, goal_j))
-        dfs_result = graph.dfs()
-        ucs_result = graph.ucs()
-        bfs_result = graph.bfs()
 
-        print(f"dfs(graph) = {{{len(dfs_result) - 1 if dfs_result is not None else 0}}}{dfs_result}")
-        print(f"usc(graph) = {{{len(ucs_result) - 1 if ucs_result is not None else 0}}}{ucs_result}")
-        print(f"bfs(graph) = {{{len(bfs_result) - 1 if bfs_result is not None else 0}}}{bfs_result}")
+        print_result("dfs", graph.dfs())
+        print_result("ucs", graph.ucs())
+        print_result("bfs", graph.bfs())
+
+
+def print_result(name: str, result: list[Node] | None, coords_only: bool = True) -> None:
+    size = len(result) - 1 if result is not None else 0
+    result_list = list(map(lambda n: n.pos, result)) if coords_only and result is not None else result
+    print(f"{name}: {{{size}}}{result_list}")
 
 
 if __name__ == '__main__':
