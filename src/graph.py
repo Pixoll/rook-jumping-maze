@@ -112,7 +112,7 @@ class Graph:
 
         return self._get_path(parents, goal)
 
-    def ucs_by_jump(self) -> list[Node] | None:
+    def ucs_by_distance(self) -> list[Node] | None:
         visited: set[Node] = set()
         final_path: list[Node] | None = None
 
