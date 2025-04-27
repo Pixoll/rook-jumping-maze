@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from math import inf
-from queue import PriorityQueue
+from queue import PriorityQueue, SimpleQueue
 
 
 class Node:
@@ -121,6 +121,31 @@ class Graph:
 
     def ucs_by_value(self) -> list[Node] | None:
         return self._ucs(lambda edge: edge.dest.value)
+
+    def bfs(self) -> list[Node] | None:
+        visited: set[Node] = {self._root}
+        parents: dict[Node, Node | None] = {self._root: None}
+        goal: Node | None = None
+
+        queue: SimpleQueue[Node] = SimpleQueue()
+        queue.put(self._root)
+
+        while not queue.empty():
+            node = queue.get()
+
+            if node.is_goal:
+                goal = node
+                break
+
+            for edge in node.edges:
+                neighbour = edge.dest
+
+                if neighbour not in visited:
+                    visited.add(neighbour)
+                    parents[neighbour] = node
+                    queue.put(neighbour)
+
+        return self._get_path(parents, goal)
 
     def dijkstra(self) -> list[Node] | None:
         distances: dict[Node, float] = {self._root: 0}

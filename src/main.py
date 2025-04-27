@@ -34,6 +34,7 @@ def main() -> None:
         print_result("ucs_by_distance", graph.ucs_by_distance())
         print_result("ucs_by_jumps", graph.ucs_by_jumps())
         print_result("ucs_by_value", graph.ucs_by_value())
+        print_result("bfs", graph.bfs())
         print_result("dijkstra", graph.dijkstra())
         print_result("a*", graph.a_star())
         print()
