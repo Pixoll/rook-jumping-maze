@@ -213,6 +213,35 @@ class Graph:
 
         return self._get_path(parents, goal)
 
+    def a_star(self) -> list[Node] | None:
+        g_scores: dict[Node, float] = {self._root: 0}
+        f_scores: dict[Node, float] = {self._root: 0}
+
+        parents: dict[Node, Node | None] = {self._root: None}
+        goal: Node | None = None
+
+        pq: PriorityQueue[tuple[float, Node]] = PriorityQueue()
+        pq.put((0, self._root))
+
+        while not pq.empty():
+            g_score, node = pq.get()
+
+            if node.is_goal:
+                goal = node
+                break
+
+            for edge in node.edges:
+                neighbour = edge.dest
+                tentative_g_score = g_score + edge.length
+
+                if neighbour not in g_scores or tentative_g_score < g_scores[neighbour]:
+                    parents[neighbour] = node
+                    g_scores[neighbour] = tentative_g_score
+                    f_scores[neighbour] = tentative_g_score + edge.heuristic
+                    pq.put((tentative_g_score, neighbour))
+
+        return self._get_path(parents, goal)
+
     def __repr__(self) -> str:
         header = f"Graph({len(self._matrix)}x{len(self._matrix[0])}, {self._start} -> {self._goal}):"
         matrix = "\n".join(map(lambda row: " ".join(["G" if v == 0 else str(v) for v in row]), self._matrix))
