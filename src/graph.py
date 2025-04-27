@@ -57,7 +57,7 @@ class Graph:
                     nj = pos[1] + dj
                     n_pos = (ni, nj)
 
-                    if 0 <= ni < len(matrix) and 0 <= nj < len(matrix):
+                    if 0 <= ni < len(matrix) and 0 <= nj < len(row):
                         neighbour = self.nodes[n_pos] if n_pos in self.nodes else Node(n_pos, n_pos == goal)
                         self.nodes[n_pos] = neighbour
                         edge = Edge(
