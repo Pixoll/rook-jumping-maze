@@ -78,8 +78,8 @@ class Graph:
         self._root = self._nodes[self._start]
 
     def bfs(self) -> list[Node] | None:
-        visited: set[tuple[int, int]] = {self._root.pos}
-        parents: dict[tuple[int, int], Node | None] = {self._root.pos: None}
+        visited: set[tuple[int, int]] = {self._start}
+        parents: dict[tuple[int, int], Node | None] = {self._start: None}
         goal: Node | None = None
 
         queue: SimpleQueue[Node] = SimpleQueue()
@@ -104,7 +104,7 @@ class Graph:
 
     def dfs(self) -> list[Node] | None:
         visited: set[tuple[int, int]] = set()
-        parents: dict[tuple[int, int], Node | None] = {self._root.pos: None}
+        parents: dict[tuple[int, int], Node | None] = {self._start: None}
         goal: Node | None = None
 
         stack = [self._root]
