@@ -1,3 +1,6 @@
+from queue import PriorityQueue, SimpleQueue
+
+
 class Node:
     edges: list['Edge']
     is_goal: bool
@@ -74,3 +77,98 @@ class Graph:
     @property
     def root(self) -> Node:
         return self.nodes[self.start]
+
+    def bfs(self) -> list[Node] | None:
+        visited: set[tuple[int, int]] = {self.root.pos}
+        queue: SimpleQueue[Node] = SimpleQueue()
+        queue.put(self.root)
+        parent: dict[tuple[int, int], Node | None] = {self.root.pos: None}
+        goal: Node | None = None
+
+        while not queue.empty():
+            node = queue.get()
+
+            if node.is_goal:
+                goal = node
+                break
+
+            for edge in node.edges:
+                neighbour = edge.dest
+
+                if neighbour.pos not in visited:
+                    visited.add(neighbour.pos)
+                    parent[neighbour.pos] = node
+                    queue.put(neighbour)
+
+        if goal is None:
+            return None
+
+        path: list[Node] = []
+        current = goal
+
+        while current is not None:
+            path.append(current)
+            current = parent[current.pos]
+
+        return path[::-1]
+
+    def dfs(self) -> list[Node] | None:
+        visited: set[tuple[int, int]] = set()
+        stack = [self.root]
+        parent: dict[tuple[int, int], Node | None] = {self.root.pos: None}
+        goal: Node | None = None
+
+        while len(stack) > 0:
+            node = stack.pop()
+
+            if node.is_goal:
+                goal = node
+                break
+
+            if node.pos not in visited:
+                visited.add(node.pos)
+
+                for edge in reversed(node.edges):
+                    neighbour = edge.dest
+
+                    if neighbour.pos not in visited:
+                        stack.append(neighbour)
+
+                        if neighbour.pos not in parent:
+                            parent[neighbour.pos] = node
+
+        if goal is None:
+            return None
+
+        path: list[Node] = []
+        current = goal
+
+        while current is not None:
+            path.append(current)
+            current = parent[current.pos]
+
+        return path[::-1]
+
+    def ucs(self) -> list[Node] | None:
+        visited: set[tuple[int, int]] = set()
+
+        pq: PriorityQueue[tuple[int, Node, list[Node]]] = PriorityQueue()
+        pq.put((0, self.root, [self.root]))
+
+        final_path: list[Node] | None = None
+
+        while not pq.empty():
+            cumulative, node, path = pq.get()
+            visited.add(node.pos)
+
+            if node.is_goal:
+                final_path = path
+                break
+
+            for edge in node.edges:
+                neighbour = edge.dest
+
+                if neighbour.pos not in visited:
+                    pq.put((cumulative + edge.length, neighbour, path + [neighbour]))
+
+        return final_path
