@@ -3,11 +3,14 @@ from queue import PriorityQueue
 
 
 class Node:
-    edges: list['Edge']
+    pos: tuple[int, int]
+    value: int
     is_goal: bool
+    edges: list['Edge']
 
-    def __init__(self, pos: tuple[int, int], is_goal: bool = False) -> None:
+    def __init__(self, pos: tuple[int, int], value: int, is_goal: bool = False) -> None:
         self.pos = pos
+        self.value = value
         self.is_goal = is_goal
         self.edges = []
 
@@ -57,7 +60,7 @@ class Graph:
         for i, row in enumerate(matrix):
             for j, length in enumerate(row):
                 pos = (i, j)
-                node = self._nodes[pos] if pos in self._nodes else Node(pos, pos == goal)
+                node = self._nodes[pos] if pos in self._nodes else Node(pos, matrix[i][j], pos == goal)
                 self._nodes[pos] = node
 
                 if length == 0:
@@ -69,7 +72,8 @@ class Graph:
                     n_pos = (ni, nj)
 
                     if 0 <= ni < len(matrix) and 0 <= nj < len(row):
-                        neighbour = self._nodes[n_pos] if n_pos in self._nodes else Node(n_pos, n_pos == goal)
+                        neighbour = (self._nodes[n_pos] if n_pos in self._nodes
+                                     else Node(n_pos, matrix[ni][nj], n_pos == goal))
                         self._nodes[n_pos] = neighbour
                         edge = Edge(
                             neighbour,
@@ -108,7 +112,7 @@ class Graph:
 
         return self._get_path(parents, goal)
 
-    def ucs(self) -> list[Node] | None:
+    def ucs_by_jump(self) -> list[Node] | None:
         visited: set[Node] = set()
         final_path: list[Node] | None = None
 
@@ -128,6 +132,29 @@ class Graph:
 
                 if neighbour not in visited:
                     pq.put((distance + edge.length, neighbour, path + [neighbour]))
+
+        return final_path
+
+    def ucs_by_value(self) -> list[Node] | None:
+        visited: set[Node] = set()
+        final_path: list[Node] | None = None
+
+        pq: PriorityQueue[tuple[int, Node, list[Node]]] = PriorityQueue()
+        pq.put((0, self._root, [self._root]))
+
+        while not pq.empty():
+            distance, node, path = pq.get()
+            visited.add(node)
+
+            if node.is_goal:
+                final_path = path
+                break
+
+            for edge in node.edges:
+                neighbour = edge.dest
+
+                if neighbour not in visited:
+                    pq.put((distance + neighbour.value, neighbour, path + [neighbour]))
 
         return final_path
 

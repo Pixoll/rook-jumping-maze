@@ -31,7 +31,8 @@ def main() -> None:
         print(graph)
         print()
         print_result("dfs", graph.dfs())
-        print_result("ucs", graph.ucs())
+        print_result("ucs_by_jump", graph.ucs_by_value())
+        print_result("ucs_by_value", graph.ucs_by_value())
         print_result("dijkstra", graph.dijkstra())
         print()
 
