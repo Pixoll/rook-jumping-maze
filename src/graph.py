@@ -78,8 +78,8 @@ class Graph:
         self._root = self._nodes[self._start]
 
     def bfs(self) -> list[Node] | None:
-        visited: set[tuple[int, int]] = {self._start}
-        parents: dict[tuple[int, int], Node | None] = {self._start: None}
+        visited: set[Node] = {self._root}
+        parents: dict[Node, Node | None] = {self._root: None}
         goal: Node | None = None
 
         queue: SimpleQueue[Node] = SimpleQueue()
@@ -95,16 +95,16 @@ class Graph:
             for edge in node.edges:
                 neighbour = edge.dest
 
-                if neighbour.pos not in visited:
-                    visited.add(neighbour.pos)
-                    parents[neighbour.pos] = node
+                if neighbour not in visited:
+                    visited.add(neighbour)
+                    parents[neighbour] = node
                     queue.put(neighbour)
 
         return self._get_path(parents, goal)
 
     def dfs(self) -> list[Node] | None:
-        visited: set[tuple[int, int]] = set()
-        parents: dict[tuple[int, int], Node | None] = {self._start: None}
+        visited: set[Node] = set()
+        parents: dict[Node, Node | None] = {self._root: None}
         goal: Node | None = None
 
         stack = [self._root]
@@ -116,22 +116,22 @@ class Graph:
                 goal = node
                 break
 
-            if node.pos not in visited:
-                visited.add(node.pos)
+            if node not in visited:
+                visited.add(node)
 
                 for edge in reversed(node.edges):
                     neighbour = edge.dest
 
-                    if neighbour.pos not in visited:
+                    if neighbour not in visited:
                         stack.append(neighbour)
 
                         if neighbour.pos not in parents:
-                            parents[neighbour.pos] = node
+                            parents[neighbour] = node
 
         return self._get_path(parents, goal)
 
     def ucs(self) -> list[Node] | None:
-        visited: set[tuple[int, int]] = set()
+        visited: set[Node] = set()
         final_path: list[Node] | None = None
 
         pq: PriorityQueue[tuple[int, Node, list[Node]]] = PriorityQueue()
@@ -139,7 +139,7 @@ class Graph:
 
         while not pq.empty():
             cumulative, node, path = pq.get()
-            visited.add(node.pos)
+            visited.add(node)
 
             if node.is_goal:
                 final_path = path
@@ -148,13 +148,13 @@ class Graph:
             for edge in node.edges:
                 neighbour = edge.dest
 
-                if neighbour.pos not in visited:
+                if neighbour not in visited:
                     pq.put((cumulative + edge.length, neighbour, path + [neighbour]))
 
         return final_path
 
     @staticmethod
-    def _get_path(parents: dict[tuple[int, int], Node | None], goal: Node | None) -> list[Node] | None:
+    def _get_path(parents: dict[Node, Node | None], goal: Node | None) -> list[Node] | None:
         if goal is None:
             return None
 
@@ -163,6 +163,6 @@ class Graph:
 
         while current is not None:
             path.append(current)
-            current = parents[current.pos]
+            current = parents[current]
 
         return path[::-1]
