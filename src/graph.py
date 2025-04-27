@@ -1,11 +1,11 @@
 class Node:
-    neighbours: list['Edge']
+    edges: list['Edge']
     is_goal: bool
 
     def __init__(self, pos: tuple[int, int], is_goal: bool = False) -> None:
         self.pos = pos
         self.is_goal = is_goal
-        self.neighbours = []
+        self.edges = []
 
     def __str__(self) -> str:
         return str(self.pos)
@@ -65,7 +65,7 @@ class Graph:
                             length,
                             heuristics[ni][nj] if heuristics is not None else 0
                         )
-                        node.neighbours.append(edge)
+                        node.edges.append(edge)
 
     @property
     def root(self) -> Node:
