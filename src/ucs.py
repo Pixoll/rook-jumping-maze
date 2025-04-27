@@ -3,13 +3,13 @@ from queue import PriorityQueue
 from src.graph import Graph, Node
 
 
-def ucs(graph: Graph) -> list[tuple[int, int]] | None:
+def ucs(graph: Graph) -> list[Node] | None:
     visited: set[tuple[int, int]] = set()
 
-    pq: PriorityQueue[tuple[int, Node, list[tuple[int, int]]]] = PriorityQueue()
-    pq.put((0, graph.root, [graph.root.pos]))
+    pq: PriorityQueue[tuple[int, Node, list[Node]]] = PriorityQueue()
+    pq.put((0, graph.root, [graph.root]))
 
-    final_path: list[tuple[int, int]] | None = None
+    final_path: list[Node] | None = None
 
     while not pq.empty():
         cumulative, node, path = pq.get()
@@ -21,14 +21,8 @@ def ucs(graph: Graph) -> list[tuple[int, int]] | None:
 
         for edge in node.edges:
             neighbour = edge.dest
-            distance = cumulative + edge.length
-            new_path = path + [neighbour.pos]
-
-            if neighbour.is_goal:
-                final_path = new_path
-                break
 
             if neighbour.pos not in visited:
-                pq.put((distance, neighbour, new_path))
+                pq.put((cumulative + edge.length, neighbour, path + [neighbour]))
 
     return final_path
