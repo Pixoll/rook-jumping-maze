@@ -135,7 +135,7 @@ class Graph:
 
         return final_path
 
-    def ucs_by_value(self) -> list[Node] | None:
+    def ucs_by_jumps(self) -> list[Node] | None:
         visited: set[Node] = set()
         final_path: list[Node] | None = None
 
@@ -143,7 +143,7 @@ class Graph:
         pq.put((0, self._root, [self._root]))
 
         while not pq.empty():
-            distance, node, path = pq.get()
+            jumps, node, path = pq.get()
             visited.add(node)
 
             if node.is_goal:
@@ -154,7 +154,30 @@ class Graph:
                 neighbour = edge.dest
 
                 if neighbour not in visited:
-                    pq.put((distance + neighbour.value, neighbour, path + [neighbour]))
+                    pq.put((jumps + 1, neighbour, path + [neighbour]))
+
+        return final_path
+
+    def ucs_by_value(self) -> list[Node] | None:
+        visited: set[Node] = set()
+        final_path: list[Node] | None = None
+
+        pq: PriorityQueue[tuple[int, Node, list[Node]]] = PriorityQueue()
+        pq.put((0, self._root, [self._root]))
+
+        while not pq.empty():
+            value_sum, node, path = pq.get()
+            visited.add(node)
+
+            if node.is_goal:
+                final_path = path
+                break
+
+            for edge in node.edges:
+                neighbour = edge.dest
+
+                if neighbour not in visited:
+                    pq.put((value_sum + neighbour.value, neighbour, path + [neighbour]))
 
         return final_path
 
