@@ -12,7 +12,7 @@ class Node:
 
     # for PriorityQueue, do not remove
     def __lt__(self, other: 'Node') -> bool:
-        return self.pos < other.pos
+        return True
 
     def __str__(self) -> str:
         return str(self.pos)
