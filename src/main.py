@@ -32,7 +32,7 @@ def main() -> None:
         print()
         print_result("dfs", graph.dfs())
         print_result("ucs", graph.ucs())
-        print_result("bfs", graph.bfs())
+        print_result("dijkstra", graph.dijkstra())
         print()
 
 

@@ -79,7 +79,7 @@ class Graph:
 
         self._root = self._nodes[self._start]
 
-    def bfs(self) -> list[Node] | None:
+    def dijkstra(self) -> list[Node] | None:
         visited: set[Node] = {self._root}
         parents: dict[Node, Node | None] = {self._root: None}
         goal: Node | None = None
