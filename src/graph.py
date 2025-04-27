@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from math import inf
 from queue import PriorityQueue
 
@@ -113,73 +114,13 @@ class Graph:
         return self._get_path(parents, goal)
 
     def ucs_by_distance(self) -> list[Node] | None:
-        visited: set[Node] = set()
-        final_path: list[Node] | None = None
-
-        pq: PriorityQueue[tuple[int, Node, list[Node]]] = PriorityQueue()
-        pq.put((0, self._root, [self._root]))
-
-        while not pq.empty():
-            distance, node, path = pq.get()
-            visited.add(node)
-
-            if node.is_goal:
-                final_path = path
-                break
-
-            for edge in node.edges:
-                neighbour = edge.dest
-
-                if neighbour not in visited:
-                    pq.put((distance + edge.length, neighbour, path + [neighbour]))
-
-        return final_path
+        return self._ucs(lambda edge: edge.length)
 
     def ucs_by_jumps(self) -> list[Node] | None:
-        visited: set[Node] = set()
-        final_path: list[Node] | None = None
-
-        pq: PriorityQueue[tuple[int, Node, list[Node]]] = PriorityQueue()
-        pq.put((0, self._root, [self._root]))
-
-        while not pq.empty():
-            jumps, node, path = pq.get()
-            visited.add(node)
-
-            if node.is_goal:
-                final_path = path
-                break
-
-            for edge in node.edges:
-                neighbour = edge.dest
-
-                if neighbour not in visited:
-                    pq.put((jumps + 1, neighbour, path + [neighbour]))
-
-        return final_path
+        return self._ucs(lambda _: 1)
 
     def ucs_by_value(self) -> list[Node] | None:
-        visited: set[Node] = set()
-        final_path: list[Node] | None = None
-
-        pq: PriorityQueue[tuple[int, Node, list[Node]]] = PriorityQueue()
-        pq.put((0, self._root, [self._root]))
-
-        while not pq.empty():
-            value_sum, node, path = pq.get()
-            visited.add(node)
-
-            if node.is_goal:
-                final_path = path
-                break
-
-            for edge in node.edges:
-                neighbour = edge.dest
-
-                if neighbour not in visited:
-                    pq.put((value_sum + neighbour.value, neighbour, path + [neighbour]))
-
-        return final_path
+        return self._ucs(lambda edge: edge.dest.value)
 
     def dijkstra(self) -> list[Node] | None:
         distances: dict[Node, float] = {self._root: 0}
@@ -246,6 +187,29 @@ class Graph:
         header = f"Graph({len(self._matrix)}x{len(self._matrix[0])}, {self._start} -> {self._goal}):"
         matrix = "\n".join(map(lambda row: " ".join(["G" if v == 0 else str(v) for v in row]), self._matrix))
         return header + "\n" + matrix
+
+    def _ucs(self, increment: Callable[[Edge], int]) -> list[Node] | None:
+        visited: set[Node] = set()
+        final_path: list[Node] | None = None
+
+        pq: PriorityQueue[tuple[int, Node, list[Node]]] = PriorityQueue()
+        pq.put((0, self._root, [self._root]))
+
+        while not pq.empty():
+            total, node, path = pq.get()
+            visited.add(node)
+
+            if node.is_goal:
+                final_path = path
+                break
+
+            for edge in node.edges:
+                neighbour = edge.dest
+
+                if neighbour not in visited:
+                    pq.put((total + increment(edge), neighbour, path + [neighbour]))
+
+        return final_path
 
     @staticmethod
     def _get_path(parents: dict[Node, Node | None], goal: Node | None) -> list[Node] | None:
