@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from src.bfs import bfs
 from src.dfs import dfs
 from src.graph import Graph
 from src.ucs import ucs
@@ -31,9 +32,11 @@ def main() -> None:
         graph = Graph(matrix, (start_i, start_j), (goal_i, goal_j))
         dfs_result = dfs(graph)
         ucs_result = ucs(graph)
+        bfs_result = bfs(graph)
 
         print(f"dfs(graph) = {{{len(dfs_result) - 1 if dfs_result is not None else 0}}}{dfs_result}")
         print(f"usc(graph) = {{{len(ucs_result) - 1 if ucs_result is not None else 0}}}{ucs_result}")
+        print(f"bfs(graph) = {{{len(bfs_result) - 1 if bfs_result is not None else 0}}}{bfs_result}")
 
 
 if __name__ == '__main__':
