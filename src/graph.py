@@ -108,7 +108,7 @@ class Graph:
                     if neighbour not in visited:
                         stack.append(neighbour)
 
-                        if neighbour.pos not in parents:
+                        if neighbour not in parents:
                             parents[neighbour] = node
 
         return self._get_path(parents, goal)
