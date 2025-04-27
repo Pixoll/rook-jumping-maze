@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from src.dfs import dfs
 from src.graph import Graph
 
 
@@ -27,7 +28,8 @@ def main() -> None:
             line_index += 1
 
         graph = Graph(matrix, (start_i, start_j), (goal_i, goal_j))
-        print(graph)
+        dfs_result = dfs(graph)
+        print(f"dfs(graph) = {{{len(dfs_result) - 1 if dfs_result is not None else 0}}}{dfs_result}")
 
 
 if __name__ == '__main__':
