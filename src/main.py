@@ -28,9 +28,12 @@ def main() -> None:
 
         graph = Graph(matrix, (start_i, start_j), (goal_i, goal_j))
 
+        print(graph)
+        print()
         print_result("dfs", graph.dfs())
         print_result("ucs", graph.ucs())
         print_result("bfs", graph.bfs())
+        print()
 
 
 def print_result(name: str, result: list[Node] | None, coords_only: bool = True) -> None:

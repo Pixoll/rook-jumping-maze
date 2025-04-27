@@ -31,11 +31,12 @@ class Edge:
         return str((self.dest, self.length, self.heuristic))
 
     def __repr__(self) -> str:
-        return f'Edge({self.dest}, {self.length}, {self.heuristic})'
+        return f'Edge({self.dest}, g={self.length}, h={self.heuristic})'
 
 
 class Graph:
     _nodes: set[Node]
+    _matrix: list[list[int]]
     _start: tuple[int, int]
     _goal: tuple[int, int]
     _root: Node
@@ -48,6 +49,7 @@ class Graph:
             heuristics: list[list[int]] | None = None,
     ) -> None:
         self._nodes: dict[tuple[int, int], Node] = dict()
+        self._matrix = matrix
         self._start = start
         self._goal = goal
 
@@ -152,6 +154,11 @@ class Graph:
                     pq.put((cumulative + edge.length, neighbour, path + [neighbour]))
 
         return final_path
+
+    def __repr__(self) -> str:
+        header = f"Graph({len(self._matrix)}x{len(self._matrix[0])}, {self._start} -> {self._goal}):"
+        matrix = "\n".join(map(lambda row: " ".join(["G" if v == 0 else str(v) for v in row]), self._matrix))
+        return header + "\n" + matrix
 
     @staticmethod
     def _get_path(parents: dict[Node, Node | None], goal: Node | None) -> list[Node] | None:
