@@ -170,7 +170,7 @@ class Graph:
 
     @staticmethod
     def _get_path(parents: dict[Node, Node | None], goal: Node | None) -> list[Node] | None:
-        if goal is None:
+        if goal is None or parents[goal] is None:
             return None
 
         path: list[Node] = []
