@@ -1,4 +1,5 @@
-from queue import PriorityQueue, SimpleQueue
+from math import inf
+from queue import PriorityQueue
 
 
 class Node:
@@ -79,31 +80,6 @@ class Graph:
 
         self._root = self._nodes[self._start]
 
-    def dijkstra(self) -> list[Node] | None:
-        visited: set[Node] = {self._root}
-        parents: dict[Node, Node | None] = {self._root: None}
-        goal: Node | None = None
-
-        queue: SimpleQueue[Node] = SimpleQueue()
-        queue.put(self._root)
-
-        while not queue.empty():
-            node = queue.get()
-
-            if node.is_goal:
-                goal = node
-                break
-
-            for edge in node.edges:
-                neighbour = edge.dest
-
-                if neighbour not in visited:
-                    visited.add(neighbour)
-                    parents[neighbour] = node
-                    queue.put(neighbour)
-
-        return self._get_path(parents, goal)
-
     def dfs(self) -> list[Node] | None:
         visited: set[Node] = set()
         parents: dict[Node, Node | None] = {self._root: None}
@@ -140,7 +116,7 @@ class Graph:
         pq.put((0, self._root, [self._root]))
 
         while not pq.empty():
-            cumulative, node, path = pq.get()
+            distance, node, path = pq.get()
             visited.add(node)
 
             if node.is_goal:
@@ -151,9 +127,41 @@ class Graph:
                 neighbour = edge.dest
 
                 if neighbour not in visited:
-                    pq.put((cumulative + edge.length, neighbour, path + [neighbour]))
+                    pq.put((distance + edge.length, neighbour, path + [neighbour]))
 
         return final_path
+
+    def dijkstra(self) -> list[Node] | None:
+        distances: dict[Node, float] = {self._root: 0}
+        parents: dict[Node, Node | None] = {self._root: None}
+        goal: Node | None = None
+
+        pq: PriorityQueue[tuple[float, Node]] = PriorityQueue()
+        pq.put((0, self._root))
+
+        for node in self._nodes.values():
+            if node != self._root:
+                parents[node] = None
+                distances[node] = inf
+                pq.put((inf, node))
+
+        while not pq.empty():
+            distance, node = pq.get()
+
+            if node.is_goal:
+                goal = node
+                break
+
+            for edge in node.edges:
+                neighbour = edge.dest
+                new_distance = distances[node] + edge.length
+
+                if new_distance < distances[neighbour]:
+                    parents[neighbour] = node
+                    distances[neighbour] = new_distance
+                    pq.put((new_distance, neighbour))
+
+        return self._get_path(parents, goal)
 
     def __repr__(self) -> str:
         header = f"Graph({len(self._matrix)}x{len(self._matrix[0])}, {self._start} -> {self._goal}):"
