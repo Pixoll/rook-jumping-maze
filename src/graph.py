@@ -41,27 +41,27 @@ class Edge:
 
 
 class Graph:
-    _nodes: set[Node]
-    _matrix: list[list[int]]
-    _start: tuple[int, int]
+    nodes: set[Node]
+    matrix: list[list[int]]
+    start: tuple[int, int]
     _goal: tuple[int, int]
     _max_jump: int
     _root: Node
 
     def __init__(self, matrix: list[list[int]], start: tuple[int, int], goal: tuple[int, int]) -> None:
-        self._nodes: dict[tuple[int, int], Node] = dict()
-        self._matrix = matrix
-        self._start = start
+        self.nodes: dict[tuple[int, int], Node] = dict()
+        self.matrix = matrix
+        self.start = start
         self._goal = goal
         self._max_jump = max([max(row) for row in matrix])
 
         for i, row in enumerate(matrix):
             for j, length in enumerate(row):
                 pos = (i, j)
-                node = self._nodes[pos] if pos in self._nodes else Node(
+                node = self.nodes[pos] if pos in self.nodes else Node(
                     pos, matrix[i][j], heuristic=self._get_heuristic(pos), is_goal=pos == goal
                 )
-                self._nodes[pos] = node
+                self.nodes[pos] = node
 
                 if length == 0:
                     continue
@@ -72,14 +72,14 @@ class Graph:
                     n_pos = (ni, nj)
 
                     if 0 <= ni < len(matrix) and 0 <= nj < len(row):
-                        neighbour = self._nodes[n_pos] if n_pos in self._nodes else Node(
+                        neighbour = self.nodes[n_pos] if n_pos in self.nodes else Node(
                             n_pos, matrix[ni][nj], heuristic=self._get_heuristic(n_pos), is_goal=n_pos == goal
                         )
-                        self._nodes[n_pos] = neighbour
+                        self.nodes[n_pos] = neighbour
                         edge = Edge(neighbour, length)
                         node.edges.append(edge)
 
-        self._root = self._nodes[self._start]
+        self._root = self.nodes[self.start]
 
     def dfs(self) -> list[Node] | None:
         visited: set[Node] = set()
@@ -151,7 +151,7 @@ class Graph:
         pq: PriorityQueue[tuple[float, Node]] = PriorityQueue()
         pq.put((0, self._root))
 
-        for node in self._nodes.values():
+        for node in self.nodes.values():
             if node != self._root:
                 parents[node] = None
                 distances[node] = inf
@@ -205,8 +205,8 @@ class Graph:
         return self._get_path(parents, goal)
 
     def __repr__(self) -> str:
-        header = f"Graph({len(self._matrix)}x{len(self._matrix[0])}, {self._start} -> {self._goal}):"
-        matrix = "\n".join(map(lambda row: " ".join(["G" if v == 0 else str(v) for v in row]), self._matrix))
+        header = f"Graph({len(self.matrix)}x{len(self.matrix[0])}, {self.start} -> {self._goal}):"
+        matrix = "\n".join(map(lambda row: " ".join(["G" if v == 0 else str(v) for v in row]), self.matrix))
         return header + "\n" + matrix
 
     def _ucs(self, increment: Callable[[Edge], int]) -> list[Node] | None:

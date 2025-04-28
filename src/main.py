@@ -1,9 +1,12 @@
 from pathlib import Path
 
 from src.graph import Graph, Node
+from src.visualizer import PathfindingVisualizer
 
 
 def main() -> None:
+    visualizer = PathfindingVisualizer()
+
     root_path = Path(__file__).parent.parent.resolve()
     input_path = root_path / "input.txt"
     lines: list[str] = []
@@ -32,6 +35,10 @@ def main() -> None:
         print()
         print_results(graph, ["dfs", "ucs_by_distance", "ucs_by_jumps", "ucs_by_value", "bfs", "dijkstra", "a_star"])
         print()
+
+        visualizer.run(graph)
+
+    visualizer.quit()
 
 
 def print_results(graph: Graph, method_names: list[str], coords_only: bool = True) -> None:
