@@ -39,10 +39,25 @@ class Algorithm:
     path: list[Node] | None
     color: tuple[int, int, int]
 
-    def __init__(self, name: str, path: list[Node] | None, color: tuple[int, int, int]) -> None:
+    def __init__(self, name: str, path: list[Node] | None, font: Font, color: tuple[int, int, int]) -> None:
         self.name = name
         self.path = path
         self.color = color
+
+        self._algorithm_text_surface = font.render(f"Algorithm: {name}", True, BLACK)
+        self._algorithm_text_position = (WINDOW_MARGIN, WINDOW_HEIGHT - BUTTON_HEIGHT - WINDOW_MARGIN)
+
+        self._algorithm_color_rect = Rect(
+            WINDOW_MARGIN + self._algorithm_text_surface.get_width() + 10,
+            WINDOW_HEIGHT - BUTTON_HEIGHT - WINDOW_MARGIN + self._algorithm_text_surface.get_height() // 2 - 10,
+            20,
+            20
+        )
+
+    def draw_text(self, screen: SurfaceType) -> None:
+        screen.blit(self._algorithm_text_surface, self._algorithm_text_position)
+        pygame.draw.rect(screen, self.color, self._algorithm_color_rect)
+        pygame.draw.rect(screen, BLACK, self._algorithm_color_rect, 1)
 
 
 class Button:
@@ -89,9 +104,6 @@ class PathfindingVisualizer:
     _show_path: bool
     _run_algorithm_button: Button
     _next_algorithm_button: Button
-    _algorithm_text_surface: SurfaceType
-    _algorithm_text_position: tuple[int, int]
-    _algorithm_color_rect: Rect
 
     def __init__(self) -> None:
         pygame.init()
@@ -143,10 +155,6 @@ class PathfindingVisualizer:
             BLACK
         )
 
-        self._algorithm_text_surface = self._font.render("_", True, BLACK)
-        self._algorithm_text_position = (0, 0)
-        self._algorithm_color_rect = Rect(0, 0, 0, 0)
-
     def run(self, graph: Graph) -> None:
         self._set_graph(graph)
 
@@ -171,13 +179,13 @@ class PathfindingVisualizer:
         self._cell_font = Font(FONT_PATH, self._cell_size // 3)
 
         self._algorithms = [
-            Algorithm("DFS", self._graph.dfs(), DFS_COLOR),
-            Algorithm("UCS (distance)", self._graph.ucs_by_distance(), UCS_DISTANCE_COLOR),
-            Algorithm("UCS (jumps)", self._graph.ucs_by_jumps(), UCS_JUMPS_COLOR),
-            Algorithm("UCS (value)", self._graph.ucs_by_value(), UCS_VALUE_COLOR),
-            Algorithm("BFS", self._graph.bfs(), BFS_COLOR),
-            Algorithm("Dijkstra", self._graph.dijkstra(), DIJKSTRA_COLOR),
-            Algorithm("A*", self._graph.a_star(), A_STAR_COLOR)
+            Algorithm("DFS", self._graph.dfs(), self._font, DFS_COLOR),
+            Algorithm("UCS (distance)", self._graph.ucs_by_distance(), self._font, UCS_DISTANCE_COLOR),
+            Algorithm("UCS (jumps)", self._graph.ucs_by_jumps(), self._font, UCS_JUMPS_COLOR),
+            Algorithm("UCS (value)", self._graph.ucs_by_value(), self._font, UCS_VALUE_COLOR),
+            Algorithm("BFS", self._graph.bfs(), self._font, BFS_COLOR),
+            Algorithm("Dijkstra", self._graph.dijkstra(), self._font, DIJKSTRA_COLOR),
+            Algorithm("A*", self._graph.a_star(), self._font, A_STAR_COLOR)
         ]
 
         self._current_algorithm_index = -1
@@ -243,10 +251,7 @@ class PathfindingVisualizer:
         self._next_algorithm_button.draw(self._screen)
 
         current_algorithm = self._algorithms[self._current_algorithm_index]
-
-        self._screen.blit(self._algorithm_text_surface, self._algorithm_text_position)
-        pygame.draw.rect(self._screen, current_algorithm.color, self._algorithm_color_rect)
-        pygame.draw.rect(self._screen, BLACK, self._algorithm_color_rect, 1)
+        current_algorithm.draw_text(self._screen)
 
     def _handle_events(self) -> None:
         for event in pygame.event.get():
@@ -276,13 +281,12 @@ class PathfindingVisualizer:
                     pygame.mouse.set_cursor(self._arrow_cursor)
 
     def _start_animation(self) -> None:
-        if self._animation_in_progress:
+        if self._animation_in_progress or self._path is None:
             return
 
-        if self._path:
-            self._show_path = True
-            self._animation_in_progress = True
-            self._animation_step = 0
+        self._show_path = True
+        self._animation_in_progress = True
+        self._animation_step = 0
 
     def _update_algorithm(self) -> None:
         self._show_path = False
@@ -293,25 +297,15 @@ class PathfindingVisualizer:
         current_algorithm = self._algorithms[self._current_algorithm_index]
         self._path = current_algorithm.path
 
-        self._algorithm_text_surface = self._font.render(f"Algorithm: {current_algorithm.name}", True, BLACK)
-        self._algorithm_text_position = (WINDOW_MARGIN, WINDOW_HEIGHT - BUTTON_HEIGHT - WINDOW_MARGIN)
-
-        self._algorithm_color_rect = Rect(
-            WINDOW_MARGIN + self._algorithm_text_surface.get_width() + 10,
-            WINDOW_HEIGHT - BUTTON_HEIGHT - WINDOW_MARGIN + self._algorithm_text_surface.get_height() // 2 - 10,
-            20,
-            20
-        )
-
         # TODO display this instead
         if self._path is None:
-            print(f"No path found with {self._algorithms[self._current_algorithm_index].name}")
+            print(f"No path found with {current_algorithm.name}")
 
     def _update_animation(self) -> None:
         if not self._animation_in_progress or self._path is None:
             return
 
-        if self._animation_step < len(self._path) - 1:
+        if self._animation_step < len(self._path):
             time.sleep(ANIMATION_SPEED)
             self._animation_step += 1
         else:
