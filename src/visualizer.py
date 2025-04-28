@@ -98,8 +98,31 @@ class Button:
             screen.blit(self._disabled_overlay, self.rect)
 
 
+class Cell:
+    _rect: Rect
+    _color: tuple[int, int, int]
+    _text_surface: SurfaceType
+    _text_position: tuple[int, int]
+
+    def __init__(self, rect: Rect, color: tuple[int, int, int], font: Font, text: str):
+        self._rect = rect
+        self._color = color
+
+        self._text_surface = font.render(text, True, BLACK)
+        self._text_position = (
+            rect.x + rect.w // 2 - self._text_surface.get_width() // 2,
+            rect.y + rect.h // 2 - self._text_surface.get_height() // 2
+        )
+
+    def draw(self, screen: SurfaceType, color: tuple[int, int, int] | None = None) -> None:
+        pygame.draw.rect(screen, color or self._color, self._rect)
+        pygame.draw.rect(screen, BLACK, self._rect, 1)
+        screen.blit(self._text_surface, self._text_position)
+
+
 class PathfindingVisualizer:
     _graph: Graph | None
+    _grid: dict[tuple[int, int], Cell]
     _cell_size: int
     _screen: SurfaceType
     _font: Font
@@ -119,6 +142,7 @@ class PathfindingVisualizer:
         pygame.display.set_caption("Pathfinding Algorithms Visualizer")
 
         self._graph = None
+        self._grid = {}
         self._cell_size = 0
 
         self._font = Font(FONT_PATH, 20)
@@ -186,6 +210,20 @@ class PathfindingVisualizer:
         self._cell_size = min(GRID_WIDTH // len(graph.matrix[0]), GRID_HEIGHT // len(graph.matrix))
         self._cell_font = Font(FONT_PATH, self._cell_size // 3)
 
+        self._grid = {
+            node.pos: Cell(
+                Rect(
+                    WINDOW_MARGIN + node.pos[1] * self._cell_size,
+                    WINDOW_MARGIN + node.pos[0] * self._cell_size,
+                    self._cell_size,
+                    self._cell_size
+                ),
+                GOLD if node.pos == self._graph.start or node.is_goal else WHITE,
+                self._cell_font,
+                "S" if node.pos == self._graph.start else "G" if node.is_goal else str(node.value)
+            ) for node in graph.nodes.values()
+        }
+
         self._algorithms = [
             Algorithm("DFS", self._graph.dfs(), self._font, DFS_COLOR),
             Algorithm("UCS (distance)", self._graph.ucs_by_distance(), self._font, UCS_DISTANCE_COLOR),
@@ -200,29 +238,8 @@ class PathfindingVisualizer:
         self._update_algorithm()
 
     def _draw_grid(self) -> None:
-        for node in self._graph.nodes.values():
-            self._draw_node(node, WHITE)
-
-    def _draw_node(self, node: Node, color: tuple[int, int, int]) -> None:
-        # TODO precalculate all this
-        cell_color = GOLD if node.pos == self._graph.start or node.is_goal else color
-
-        rect = Rect(
-            WINDOW_MARGIN + node.pos[1] * self._cell_size,
-            WINDOW_MARGIN + node.pos[0] * self._cell_size,
-            self._cell_size,
-            self._cell_size
-        )
-
-        pygame.draw.rect(self._screen, cell_color, rect)
-        pygame.draw.rect(self._screen, BLACK, rect, 1)
-
-        value = "S" if node.pos == self._graph.start else "G" if node.is_goal else str(node.value)
-        value_text = self._cell_font.render(value, True, BLACK)
-        self._screen.blit(value_text, (
-            rect.x + self._cell_size // 2 - value_text.get_width() // 2,
-            rect.y + self._cell_size // 2 - value_text.get_height() // 2
-        ))
+        for cell in self._grid.values():
+            cell.draw(self._screen)
 
     def _draw_path(self) -> None:
         if not self._show_path:
@@ -252,7 +269,7 @@ class PathfindingVisualizer:
 
                 pygame.draw.line(self._screen, path_color, start_pos, end_pos, 3)
 
-            self._draw_node(self._path[i], cell_color)
+            self._grid[self._path[i].pos].draw(self._screen, cell_color)
 
     def _draw_buttons(self) -> None:
         self._run_algorithm_button.draw(self._screen)
