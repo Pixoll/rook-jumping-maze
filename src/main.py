@@ -30,20 +30,28 @@ def main() -> None:
 
         print(graph)
         print()
-        print_result("dfs", graph.dfs())
-        print_result("ucs_by_distance", graph.ucs_by_distance())
-        print_result("ucs_by_jumps", graph.ucs_by_jumps())
-        print_result("ucs_by_value", graph.ucs_by_value())
-        print_result("bfs", graph.bfs())
-        print_result("dijkstra", graph.dijkstra())
-        print_result("a*", graph.a_star())
+        print_results(graph, ["dfs", "ucs_by_distance", "ucs_by_jumps", "ucs_by_value", "bfs", "dijkstra", "a_star"])
         print()
 
 
-def print_result(name: str, result: list[Node] | None, coords_only: bool = True) -> None:
-    size = len(result) - 1 if result is not None else 0
-    result_list = list(map(lambda n: n.pos, result)) if coords_only and result is not None else result
-    print(f"{name}: {{{size}}}{result_list}")
+def print_results(graph: Graph, method_names: list[str], coords_only: bool = True) -> None:
+    max_length = max([len(name) for name in method_names])
+
+    for name in method_names:
+        if not hasattr(graph, name):
+            raise Exception(f"Method Graph.{name}() not found")
+
+        method = getattr(graph, name)
+
+        if not callable(method):
+            raise Exception(f"Method Graph.{name}() not found")
+
+        padded_name = name.ljust(max_length, " ")
+        result: list[Node] | None = method()
+
+        size = len(result) - 1 if result is not None else 0
+        result_list = list(map(lambda n: n.pos, result)) if coords_only and result is not None else result
+        print(f"{padded_name} : {{{size}}}{result_list}")
 
 
 if __name__ == '__main__':
