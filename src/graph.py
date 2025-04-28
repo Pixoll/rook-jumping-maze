@@ -6,12 +6,14 @@ from queue import PriorityQueue, SimpleQueue
 class Node:
     pos: tuple[int, int]
     value: int
+    heuristic: int
     is_goal: bool
     edges: list['Edge']
 
-    def __init__(self, pos: tuple[int, int], value: int, is_goal: bool = False) -> None:
+    def __init__(self, pos: tuple[int, int], value: int, heuristic: int = 0, is_goal: bool = False) -> None:
         self.pos = pos
         self.value = value
+        self.heuristic = heuristic
         self.is_goal = is_goal
         self.edges = []
 
@@ -27,16 +29,15 @@ class Node:
 
 
 class Edge:
-    def __init__(self, dest: Node, length: int, heuristic: int = 0) -> None:
+    def __init__(self, dest: Node, length: int) -> None:
         self.dest = dest
         self.length = length
-        self.heuristic = heuristic
 
     def __str__(self) -> str:
-        return str((self.dest, self.length, self.heuristic))
+        return str((self.dest, self.length))
 
     def __repr__(self) -> str:
-        return f'Edge({self.dest}, g={self.length}, h={self.heuristic})'
+        return f'Edge({self.dest}, {self.length})'
 
 
 class Graph:
@@ -44,24 +45,22 @@ class Graph:
     _matrix: list[list[int]]
     _start: tuple[int, int]
     _goal: tuple[int, int]
+    _max_jump: int
     _root: Node
 
-    def __init__(
-            self,
-            matrix: list[list[int]],
-            start: tuple[int, int],
-            goal: tuple[int, int],
-            heuristics: list[list[int]] | None = None,
-    ) -> None:
+    def __init__(self, matrix: list[list[int]], start: tuple[int, int], goal: tuple[int, int]) -> None:
         self._nodes: dict[tuple[int, int], Node] = dict()
         self._matrix = matrix
         self._start = start
         self._goal = goal
+        self._max_jump = max([max(row) for row in matrix])
 
         for i, row in enumerate(matrix):
             for j, length in enumerate(row):
                 pos = (i, j)
-                node = self._nodes[pos] if pos in self._nodes else Node(pos, matrix[i][j], pos == goal)
+                node = self._nodes[pos] if pos in self._nodes else Node(
+                    pos, matrix[i][j], heuristic=self._get_heuristic(pos), is_goal=pos == goal
+                )
                 self._nodes[pos] = node
 
                 if length == 0:
@@ -73,14 +72,11 @@ class Graph:
                     n_pos = (ni, nj)
 
                     if 0 <= ni < len(matrix) and 0 <= nj < len(row):
-                        neighbour = (self._nodes[n_pos] if n_pos in self._nodes
-                                     else Node(n_pos, matrix[ni][nj], n_pos == goal))
-                        self._nodes[n_pos] = neighbour
-                        edge = Edge(
-                            neighbour,
-                            length,
-                            heuristics[ni][nj] if heuristics is not None else 0
+                        neighbour = self._nodes[n_pos] if n_pos in self._nodes else Node(
+                            n_pos, matrix[ni][nj], heuristic=self._get_heuristic(n_pos), is_goal=n_pos == goal
                         )
+                        self._nodes[n_pos] = neighbour
+                        edge = Edge(neighbour, length)
                         node.edges.append(edge)
 
         self._root = self._nodes[self._start]
@@ -181,7 +177,7 @@ class Graph:
 
     def a_star(self) -> list[Node] | None:
         g_scores: dict[Node, float] = {self._root: 0}
-        f_scores: dict[Node, float] = {self._root: 0}
+        f_scores: dict[Node, float] = {self._root: self._root.heuristic}
 
         parents: dict[Node, Node | None] = {self._root: None}
         goal: Node | None = None
@@ -203,7 +199,7 @@ class Graph:
                 if neighbour not in g_scores or tentative_g_score < g_scores[neighbour]:
                     parents[neighbour] = node
                     g_scores[neighbour] = tentative_g_score
-                    f_scores[neighbour] = tentative_g_score + edge.heuristic
+                    f_scores[neighbour] = tentative_g_score + neighbour.heuristic
                     pq.put((tentative_g_score, neighbour))
 
         return self._get_path(parents, goal)
@@ -235,6 +231,9 @@ class Graph:
                     pq.put((total + increment(edge), neighbour, path + [neighbour]))
 
         return final_path
+
+    def _get_heuristic(self, pos: tuple[int, int]) -> int:
+        return (abs(pos[0] - self._goal[0]) + abs(pos[1] - self._goal[1])) // (self._max_jump - 1)
 
     @staticmethod
     def _get_path(parents: dict[Node, Node | None], goal: Node | None) -> list[Node] | None:
