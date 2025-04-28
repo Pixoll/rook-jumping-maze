@@ -118,25 +118,26 @@ class Algorithm:
         arrow_color = (255 - color[0], 255 - color[1], 255 - color[2])
         self._arrows = []
 
-        for i in range(1, len(path)):
-            previous = path[i - 1].pos
-            current = path[i].pos
+        if path is not None:
+            for i in range(1, len(path)):
+                previous = path[i - 1].pos
+                current = path[i].pos
 
-            arrow = Arrow(
-                (
-                    WINDOW_MARGIN + previous[1] * cell_size + cell_size // 2,
-                    WINDOW_MARGIN + previous[0] * cell_size + cell_size // 2
-                ),
-                (
-                    WINDOW_MARGIN + current[1] * cell_size + cell_size // 2,
-                    WINDOW_MARGIN + current[0] * cell_size + cell_size // 2
-                ),
-                arrow_color,
-                3,
-                10,
-            )
+                arrow = Arrow(
+                    (
+                        WINDOW_MARGIN + previous[1] * cell_size + cell_size // 2,
+                        WINDOW_MARGIN + previous[0] * cell_size + cell_size // 2
+                    ),
+                    (
+                        WINDOW_MARGIN + current[1] * cell_size + cell_size // 2,
+                        WINDOW_MARGIN + current[0] * cell_size + cell_size // 2
+                    ),
+                    arrow_color,
+                    3,
+                    10,
+                )
 
-            self._arrows.append(arrow)
+                self._arrows.append(arrow)
 
     def draw_text(self, screen: SurfaceType) -> None:
         screen.blit(self._algorithm_text_surface, self._algorithm_text_position)
@@ -250,7 +251,6 @@ class PathfindingVisualizer:
         self._arrow_cursor = Cursor(pygame.SYSTEM_CURSOR_ARROW)
         self._hand_cursor = Cursor(pygame.SYSTEM_CURSOR_HAND)
 
-        # TODO add "next graph" button
         self._run_algorithm_button = Button(
             Rect(
                 WINDOW_WIDTH - BUTTON_WIDTH - WINDOW_MARGIN,
@@ -277,6 +277,19 @@ class PathfindingVisualizer:
             self._font,
             BLACK
         )
+        self._next_graph_button = Button(
+            Rect(
+                WINDOW_WIDTH - BUTTON_WIDTH - WINDOW_MARGIN,
+                WINDOW_HEIGHT - 3 * BUTTON_HEIGHT - 3 * WINDOW_MARGIN + 2 * BUTTON_GAP,
+                BUTTON_WIDTH,
+                BUTTON_HEIGHT
+            ),
+            LIGHT_GRAY,
+            BLACK,
+            "Next graph",
+            self._font,
+            BLACK
+        )
 
     def run(self, graph: Graph) -> None:
         self._set_graph(graph)
@@ -284,7 +297,9 @@ class PathfindingVisualizer:
         while True:
             self._screen.fill(WHITE)
 
-            self._handle_events()
+            should_exit = self._handle_events()
+            if should_exit:
+                break
 
             # grid
             for cell in self._grid.values():
@@ -293,6 +308,7 @@ class PathfindingVisualizer:
             # buttons
             self._run_algorithm_button.draw(self._screen)
             self._next_algorithm_button.draw(self._screen)
+            self._next_graph_button.draw(self._screen)
 
             # algorithm text
             current_algorithm = self._algorithms[self._current_algorithm_index]
@@ -352,7 +368,7 @@ class PathfindingVisualizer:
 
         current_algorithm.draw_arrows(self._screen, range_end - 1)
 
-    def _handle_events(self) -> None:
+    def _handle_events(self) -> bool:
         for event in pygame.event.get():
             match event.type:
                 case pygame.QUIT:
@@ -366,18 +382,24 @@ class PathfindingVisualizer:
                         self._start_animation()
                         continue
 
-                    if self._next_algorithm_button.contains(mouse_pos) and self._next_algorithm_button.enabled:
+                    if self._next_algorithm_button.contains(mouse_pos):
                         self._update_algorithm()
                         continue
+
+                    if self._next_graph_button.contains(mouse_pos):
+                        return True
 
                 case pygame.MOUSEMOTION:
                     mouse_pos = pygame.mouse.get_pos()
                     is_hover = (
                             (self._run_algorithm_button.contains(mouse_pos) and self._run_algorithm_button.enabled)
-                            or (self._next_algorithm_button.contains(mouse_pos) and self._next_algorithm_button.enabled)
+                            or self._next_algorithm_button.contains(mouse_pos)
+                            or self._next_graph_button.contains(mouse_pos)
                     )
 
                     pygame.mouse.set_cursor(self._hand_cursor if is_hover else self._arrow_cursor)
+
+        return False
 
     def _start_animation(self) -> None:
         if self._animation_in_progress or self._path is None:
