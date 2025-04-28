@@ -78,10 +78,10 @@ class Arrow:
             (int(end[0] + rp3[0] * tip_size), int(end[1] + rp3[1] * tip_size)),
         ]
 
-    def draw(self, screen: SurfaceType) -> None:
-        pygame.draw.line(screen, self._color, self._start, self._end, self._width)
-        gfxdraw.filled_polygon(screen, self._tip, self._color)
-        gfxdraw.aapolygon(screen, self._tip, self._color)
+    def draw(self, screen: SurfaceType, color: tuple[int, int, int] | None = None) -> None:
+        pygame.draw.line(screen, color or self._color, self._start, self._end, self._width)
+        gfxdraw.filled_polygon(screen, self._tip, color or self._color)
+        gfxdraw.aapolygon(screen, self._tip, color or self._color)
 
 
 class Algorithm:
@@ -145,7 +145,7 @@ class Algorithm:
 
     def draw_arrows(self, screen: SurfaceType, until: int) -> None:
         for i in range(until):
-            self._arrows[i].draw(screen)
+            self._arrows[i].draw(screen, GOLD if i == until - 1 else None)
 
 
 class Button:
