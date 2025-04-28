@@ -1,9 +1,10 @@
 import sys
 import time
+from math import atan2, cos, radians, sin
 from pathlib import Path
 
 import pygame
-from pygame import Cursor, Rect, SurfaceType
+from pygame import Cursor, gfxdraw, Rect, SurfaceType
 from pygame.font import Font
 
 from src.graph import Graph, Node
@@ -17,6 +18,8 @@ BUTTON_HEIGHT = 40
 BUTTON_WIDTH = 200
 BUTTON_GAP = 10
 ANIMATION_SPEED = 0.25
+PI_6_RADIANS = radians(30)
+PI_2_RADIANS = radians(90)
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -34,15 +37,61 @@ ROOT_PATH = Path(__file__).parent.parent.resolve()
 FONT_PATH = ROOT_PATH / "resources/fonts/JetBrainsMono-Regular.ttf"
 
 
+class Arrow:
+    _start: tuple[int, int]
+    _end: tuple[int, int]
+    _color: tuple[int, int, int]
+    _width: int
+    _tip: list[tuple[int, int]]
+
+    def __init__(
+            self,
+            start: tuple[int, int],
+            end: tuple[int, int],
+            color: tuple[int, int, int],
+            width: int,
+            tip_size: int
+    ) -> None:
+        self._start = start
+        self._end = end
+        self._color = color
+        self._width = width
+
+        p1 = (0, -1)
+        p2 = (cos(PI_6_RADIANS), sin(PI_6_RADIANS))
+        p3 = (cos(PI_6_RADIANS) * -1, sin(PI_6_RADIANS))
+
+        ra = atan2(start[1] - end[1], start[0] - end[0]) - PI_2_RADIANS
+        rp1x = p1[0] * cos(ra) - p1[1] * sin(ra)
+        rp1y = p1[0] * sin(ra) + p1[1] * cos(ra)
+        rp2x = p2[0] * cos(ra) - p2[1] * sin(ra)
+        rp2y = p2[0] * sin(ra) + p2[1] * cos(ra)
+        rp3x = p3[0] * cos(ra) - p3[1] * sin(ra)
+        rp3y = p3[0] * sin(ra) + p3[1] * cos(ra)
+        rp1 = (rp1x, rp1y)
+        rp2 = (rp2x, rp2y)
+        rp3 = (rp3x, rp3y)
+
+        self._tip = [
+            (int(end[0] + rp1[0] * tip_size), int(end[1] + rp1[1] * tip_size)),
+            (int(end[0] + rp2[0] * tip_size), int(end[1] + rp2[1] * tip_size)),
+            (int(end[0] + rp3[0] * tip_size), int(end[1] + rp3[1] * tip_size)),
+        ]
+
+    def draw(self, screen: SurfaceType) -> None:
+        pygame.draw.line(screen, self._color, self._start, self._end, self._width)
+        gfxdraw.filled_polygon(screen, self._tip, self._color)
+        gfxdraw.aapolygon(screen, self._tip, self._color)
+
+
 class Algorithm:
     name: str
     path: list[Node] | None
     color: tuple[int, int, int]
-    _line_color: tuple[int, int, int]
     _algorithm_text_surface: SurfaceType
     _algorithm_text_position: tuple[int, int]
     _algorithm_color_rect: Rect
-    _lines: list[tuple[tuple[int, int], tuple[int, int]]]
+    _arrows: list[Arrow]
 
     def __init__(
             self,
@@ -55,7 +104,6 @@ class Algorithm:
         self.name = name
         self.path = path
         self.color = color
-        self._line_color = (255 - color[0], 255 - color[1], 255 - color[2])
 
         self._algorithm_text_surface = font.render(f"Algorithm: {name}", True, BLACK)
         self._algorithm_text_position = (WINDOW_MARGIN, WINDOW_HEIGHT - BUTTON_HEIGHT - WINDOW_MARGIN)
@@ -67,32 +115,37 @@ class Algorithm:
             20
         )
 
-        self._lines = []
+        arrow_color = (255 - color[0], 255 - color[1], 255 - color[2])
+        self._arrows = []
 
         for i in range(1, len(path)):
             previous = path[i - 1].pos
             current = path[i].pos
 
-            start_pos = (
-                WINDOW_MARGIN + previous[1] * cell_size + cell_size // 2,
-                WINDOW_MARGIN + previous[0] * cell_size + cell_size // 2
-            )
-            end_pos = (
-                WINDOW_MARGIN + current[1] * cell_size + cell_size // 2,
-                WINDOW_MARGIN + current[0] * cell_size + cell_size // 2
+            arrow = Arrow(
+                (
+                    WINDOW_MARGIN + previous[1] * cell_size + cell_size // 2,
+                    WINDOW_MARGIN + previous[0] * cell_size + cell_size // 2
+                ),
+                (
+                    WINDOW_MARGIN + current[1] * cell_size + cell_size // 2,
+                    WINDOW_MARGIN + current[0] * cell_size + cell_size // 2
+                ),
+                arrow_color,
+                3,
+                10,
             )
 
-            self._lines.append((start_pos, end_pos))
+            self._arrows.append(arrow)
 
     def draw_text(self, screen: SurfaceType) -> None:
         screen.blit(self._algorithm_text_surface, self._algorithm_text_position)
         pygame.draw.rect(screen, self.color, self._algorithm_color_rect)
         pygame.draw.rect(screen, BLACK, self._algorithm_color_rect, 1)
 
-    def draw_lines(self, screen: SurfaceType, up_to: int) -> None:
-        for i in range(up_to):
-            start_pos, end_pos = self._lines[i]
-            pygame.draw.line(screen, self._line_color, start_pos, end_pos, 3)
+    def draw_arrows(self, screen: SurfaceType, until: int) -> None:
+        for i in range(until):
+            self._arrows[i].draw(screen)
 
 
 class Button:
@@ -290,7 +343,6 @@ class PathfindingVisualizer:
         if not self._show_path:
             return
 
-        # TODO add arrow tip
         current_algorithm = self._algorithms[self._current_algorithm_index]
         range_end = (self._animation_step + 1 if self._animation_in_progress and self._animation_step < len(self._path)
                      else len(self._path))
@@ -298,7 +350,7 @@ class PathfindingVisualizer:
         for i in range(range_end):
             self._grid[self._path[i].pos].draw(self._screen, current_algorithm.color)
 
-        current_algorithm.draw_lines(self._screen, range_end - 1)
+        current_algorithm.draw_arrows(self._screen, range_end - 1)
 
     def _handle_events(self) -> None:
         for event in pygame.event.get():
