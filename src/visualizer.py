@@ -62,6 +62,7 @@ class Algorithm:
 
 class Button:
     rect: Rect
+    enabled: bool
     _background_color: tuple[int, int, int]
     _border_color: tuple[int, int, int]
     _text_surface: SurfaceType
@@ -76,18 +77,25 @@ class Button:
             text_color: tuple[int, int, int]
     ) -> None:
         self.rect = rect
+        self.enabled = True
         self._background_color = background_color
         self._border_color = border_color
         self._text_surface = text_font.render(text, True, text_color)
         self._text_position = (
-            self.rect.x + self.rect.width // 2 - self._text_surface.get_width() // 2,
-            self.rect.y + self.rect.height // 2 - self._text_surface.get_height() // 2
+            rect.x + rect.width // 2 - self._text_surface.get_width() // 2,
+            rect.y + rect.height // 2 - self._text_surface.get_height() // 2
         )
+        self._disabled_overlay = pygame.Surface(rect.size)
+        self._disabled_overlay.set_alpha(128)
+        self._disabled_overlay.fill(BLACK)
 
     def draw(self, screen: SurfaceType) -> None:
         pygame.draw.rect(screen, self._background_color, self.rect)
         pygame.draw.rect(screen, self._border_color, self.rect, 2)
         screen.blit(self._text_surface, self._text_position)
+
+        if not self.enabled:
+            screen.blit(self._disabled_overlay, self.rect)
 
 
 class PathfindingVisualizer:
@@ -255,29 +263,33 @@ class PathfindingVisualizer:
 
     def _handle_events(self) -> None:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+            match event.type:
+                case pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
 
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_pos = pygame.mouse.get_pos()
+                case pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = pygame.mouse.get_pos()
 
-                if self._run_algorithm_button.rect.collidepoint(mouse_pos):
-                    self._start_animation()
-                    continue
+                    if self._run_algorithm_button.rect.collidepoint(mouse_pos) and self._run_algorithm_button.enabled:
+                        self._start_animation()
+                        continue
 
-                if self._next_algorithm_button.rect.collidepoint(mouse_pos):
-                    self._update_algorithm()
-                    continue
+                    if self._next_algorithm_button.rect.collidepoint(mouse_pos) and self._next_algorithm_button.enabled:
+                        self._update_algorithm()
+                        continue
 
-            if event.type == pygame.MOUSEMOTION:
-                mouse_pos = pygame.mouse.get_pos()
+                case pygame.MOUSEMOTION:
+                    mouse_pos = pygame.mouse.get_pos()
 
-                if self._run_algorithm_button.rect.collidepoint(mouse_pos):
-                    pygame.mouse.set_cursor(self._hand_cursor)
-                elif self._next_algorithm_button.rect.collidepoint(mouse_pos):
-                    pygame.mouse.set_cursor(self._hand_cursor)
-                else:
+                    if self._run_algorithm_button.rect.collidepoint(mouse_pos) and self._run_algorithm_button.enabled:
+                        pygame.mouse.set_cursor(self._hand_cursor)
+                        continue
+
+                    if self._next_algorithm_button.rect.collidepoint(mouse_pos) and self._next_algorithm_button.enabled:
+                        pygame.mouse.set_cursor(self._hand_cursor)
+                        continue
+
                     pygame.mouse.set_cursor(self._arrow_cursor)
 
     def _start_animation(self) -> None:
@@ -296,6 +308,7 @@ class PathfindingVisualizer:
 
         current_algorithm = self._algorithms[self._current_algorithm_index]
         self._path = current_algorithm.path
+        self._run_algorithm_button.enabled = self._path is not None
 
         # TODO display this instead
         if self._path is None:
