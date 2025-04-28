@@ -38,11 +38,24 @@ class Algorithm:
     name: str
     path: list[Node] | None
     color: tuple[int, int, int]
+    _line_color: tuple[int, int, int]
+    _algorithm_text_surface: SurfaceType
+    _algorithm_text_position: tuple[int, int]
+    _algorithm_color_rect: Rect
+    _lines: list[tuple[tuple[int, int], tuple[int, int]]]
 
-    def __init__(self, name: str, path: list[Node] | None, font: Font, color: tuple[int, int, int]) -> None:
+    def __init__(
+            self,
+            name: str,
+            path: list[Node] | None,
+            font: Font,
+            color: tuple[int, int, int],
+            cell_size: int
+    ) -> None:
         self.name = name
         self.path = path
         self.color = color
+        self._line_color = (255 - color[0], 255 - color[1], 255 - color[2])
 
         self._algorithm_text_surface = font.render(f"Algorithm: {name}", True, BLACK)
         self._algorithm_text_position = (WINDOW_MARGIN, WINDOW_HEIGHT - BUTTON_HEIGHT - WINDOW_MARGIN)
@@ -54,10 +67,32 @@ class Algorithm:
             20
         )
 
+        self._lines = []
+
+        for i in range(1, len(path)):
+            previous = path[i - 1].pos
+            current = path[i].pos
+
+            start_pos = (
+                WINDOW_MARGIN + previous[1] * cell_size + cell_size // 2,
+                WINDOW_MARGIN + previous[0] * cell_size + cell_size // 2
+            )
+            end_pos = (
+                WINDOW_MARGIN + current[1] * cell_size + cell_size // 2,
+                WINDOW_MARGIN + current[0] * cell_size + cell_size // 2
+            )
+
+            self._lines.append((start_pos, end_pos))
+
     def draw_text(self, screen: SurfaceType) -> None:
         screen.blit(self._algorithm_text_surface, self._algorithm_text_position)
         pygame.draw.rect(screen, self.color, self._algorithm_color_rect)
         pygame.draw.rect(screen, BLACK, self._algorithm_color_rect, 1)
+
+    def draw_lines(self, screen: SurfaceType, up_to: int) -> None:
+        for i in range(up_to):
+            start_pos, end_pos = self._lines[i]
+            pygame.draw.line(screen, self._line_color, start_pos, end_pos, 3)
 
 
 class Button:
@@ -239,13 +274,13 @@ class PathfindingVisualizer:
         }
 
         self._algorithms = [
-            Algorithm("DFS", self._graph.dfs(), self._font, DFS_COLOR),
-            Algorithm("UCS (distance)", self._graph.ucs_by_distance(), self._font, UCS_DISTANCE_COLOR),
-            Algorithm("UCS (jumps)", self._graph.ucs_by_jumps(), self._font, UCS_JUMPS_COLOR),
-            Algorithm("UCS (value)", self._graph.ucs_by_value(), self._font, UCS_VALUE_COLOR),
-            Algorithm("BFS", self._graph.bfs(), self._font, BFS_COLOR),
-            Algorithm("Dijkstra", self._graph.dijkstra(), self._font, DIJKSTRA_COLOR),
-            Algorithm("A*", self._graph.a_star(), self._font, A_STAR_COLOR)
+            Algorithm("DFS", self._graph.dfs(), self._font, DFS_COLOR, self._cell_size),
+            Algorithm("UCS (distance)", self._graph.ucs_by_distance(), self._font, UCS_DISTANCE_COLOR, self._cell_size),
+            Algorithm("UCS (jumps)", self._graph.ucs_by_jumps(), self._font, UCS_JUMPS_COLOR, self._cell_size),
+            Algorithm("UCS (value)", self._graph.ucs_by_value(), self._font, UCS_VALUE_COLOR, self._cell_size),
+            Algorithm("BFS", self._graph.bfs(), self._font, BFS_COLOR, self._cell_size),
+            Algorithm("Dijkstra", self._graph.dijkstra(), self._font, DIJKSTRA_COLOR, self._cell_size),
+            Algorithm("A*", self._graph.a_star(), self._font, A_STAR_COLOR, self._cell_size)
         ]
 
         self._current_algorithm_index = -1
@@ -255,31 +290,15 @@ class PathfindingVisualizer:
         if not self._show_path:
             return
 
-        # TODO precalculate all this
-        # TODO ensure they're drawn on top of everything else
         # TODO add arrow tip
-        cell_color = self._algorithms[self._current_algorithm_index].color
-        path_color = (255 - cell_color[0], 255 - cell_color[1], 255 - cell_color[2])
+        current_algorithm = self._algorithms[self._current_algorithm_index]
         range_end = (self._animation_step + 1 if self._animation_in_progress and self._animation_step < len(self._path)
                      else len(self._path))
 
         for i in range(range_end):
-            if i > 0:
-                prev_x, prev_y = self._path[i - 1].pos
-                curr_x, curr_y = self._path[i].pos
+            self._grid[self._path[i].pos].draw(self._screen, current_algorithm.color)
 
-                start_pos = (
-                    WINDOW_MARGIN + prev_y * self._cell_size + self._cell_size // 2,
-                    WINDOW_MARGIN + prev_x * self._cell_size + self._cell_size // 2
-                )
-                end_pos = (
-                    WINDOW_MARGIN + curr_y * self._cell_size + self._cell_size // 2,
-                    WINDOW_MARGIN + curr_x * self._cell_size + self._cell_size // 2
-                )
-
-                pygame.draw.line(self._screen, path_color, start_pos, end_pos, 3)
-
-            self._grid[self._path[i].pos].draw(self._screen, cell_color)
+        current_algorithm.draw_lines(self._screen, range_end - 1)
 
     def _handle_events(self) -> None:
         for event in pygame.event.get():
