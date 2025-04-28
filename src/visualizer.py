@@ -89,6 +89,9 @@ class Button:
         self._disabled_overlay.set_alpha(128)
         self._disabled_overlay.fill(BLACK)
 
+    def contains(self, point: tuple[int, int]) -> bool:
+        return self.rect.collidepoint(point)
+
     def draw(self, screen: SurfaceType) -> None:
         pygame.draw.rect(screen, self._background_color, self.rect)
         pygame.draw.rect(screen, self._border_color, self.rect, 2)
@@ -194,9 +197,20 @@ class PathfindingVisualizer:
             self._screen.fill(WHITE)
 
             self._handle_events()
-            self._draw_grid()
+
+            # grid
+            for cell in self._grid.values():
+                cell.draw(self._screen)
+
+            # buttons
+            self._run_algorithm_button.draw(self._screen)
+            self._next_algorithm_button.draw(self._screen)
+
+            # algorithm text
+            current_algorithm = self._algorithms[self._current_algorithm_index]
+            current_algorithm.draw_text(self._screen)
+
             self._draw_path()
-            self._draw_buttons()
             self._update_animation()
 
             pygame.display.flip()
@@ -237,10 +251,6 @@ class PathfindingVisualizer:
         self._current_algorithm_index = -1
         self._update_algorithm()
 
-    def _draw_grid(self) -> None:
-        for cell in self._grid.values():
-            cell.draw(self._screen)
-
     def _draw_path(self) -> None:
         if not self._show_path:
             return
@@ -271,13 +281,6 @@ class PathfindingVisualizer:
 
             self._grid[self._path[i].pos].draw(self._screen, cell_color)
 
-    def _draw_buttons(self) -> None:
-        self._run_algorithm_button.draw(self._screen)
-        self._next_algorithm_button.draw(self._screen)
-
-        current_algorithm = self._algorithms[self._current_algorithm_index]
-        current_algorithm.draw_text(self._screen)
-
     def _handle_events(self) -> None:
         for event in pygame.event.get():
             match event.type:
@@ -288,26 +291,22 @@ class PathfindingVisualizer:
                 case pygame.MOUSEBUTTONDOWN:
                     mouse_pos = pygame.mouse.get_pos()
 
-                    if self._run_algorithm_button.rect.collidepoint(mouse_pos) and self._run_algorithm_button.enabled:
+                    if self._run_algorithm_button.contains(mouse_pos) and self._run_algorithm_button.enabled:
                         self._start_animation()
                         continue
 
-                    if self._next_algorithm_button.rect.collidepoint(mouse_pos) and self._next_algorithm_button.enabled:
+                    if self._next_algorithm_button.contains(mouse_pos) and self._next_algorithm_button.enabled:
                         self._update_algorithm()
                         continue
 
                 case pygame.MOUSEMOTION:
                     mouse_pos = pygame.mouse.get_pos()
+                    is_hover = (
+                            (self._run_algorithm_button.contains(mouse_pos) and self._run_algorithm_button.enabled)
+                            or (self._next_algorithm_button.contains(mouse_pos) and self._next_algorithm_button.enabled)
+                    )
 
-                    if self._run_algorithm_button.rect.collidepoint(mouse_pos) and self._run_algorithm_button.enabled:
-                        pygame.mouse.set_cursor(self._hand_cursor)
-                        continue
-
-                    if self._next_algorithm_button.rect.collidepoint(mouse_pos) and self._next_algorithm_button.enabled:
-                        pygame.mouse.set_cursor(self._hand_cursor)
-                        continue
-
-                    pygame.mouse.set_cursor(self._arrow_cursor)
+                    pygame.mouse.set_cursor(self._hand_cursor if is_hover else self._arrow_cursor)
 
     def _start_animation(self) -> None:
         if self._animation_in_progress or self._path is None:
