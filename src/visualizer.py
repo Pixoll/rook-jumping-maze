@@ -1,7 +1,7 @@
 import sys
-import time
 from math import atan2, ceil, cos, radians, sin
 from pathlib import Path
+from time import time
 
 import pygame
 from pygame import Cursor, gfxdraw, Rect, SurfaceType
@@ -230,6 +230,7 @@ class Algorithm:
         pygame.draw.rect(screen, self.color, self._algorithm_color_rect)
         pygame.draw.rect(screen, BLACK, self._algorithm_color_rect, 1)
 
+        if self._hover_text_surface is not None:
             screen.blit(self._hover_text_surface, self._hover_text_position)
 
         if self._draw_popup:
@@ -317,6 +318,7 @@ class PathfindingVisualizer:
     _current_algorithm_index: int
     _path: list[Node] | None
     _animation_in_progress: bool
+    _last_animation_update: float
     _animation_step: int
     _show_path: bool
     _run_algorithm_button: Button
@@ -346,6 +348,7 @@ class PathfindingVisualizer:
         self._current_algorithm_index = 0
         self._path = None
         self._animation_in_progress = False
+        self._last_animation_update = 0
         self._animation_step = 0
         self._show_path = False
 
@@ -511,11 +514,13 @@ class PathfindingVisualizer:
 
         self._show_path = True
         self._animation_in_progress = True
+        self._last_animation_update = 0
         self._animation_step = 0
 
     def _update_algorithm(self) -> None:
         self._show_path = False
         self._animation_in_progress = False
+        self._last_animation_update = 0
         self._animation_step = 0
         self._current_algorithm_index = (self._current_algorithm_index + 1) % len(self._algorithms)
 
@@ -527,8 +532,10 @@ class PathfindingVisualizer:
         if not self._animation_in_progress or self._path is None:
             return
 
-        if self._animation_step < len(self._path):
-            time.sleep(ANIMATION_SPEED)
-            self._animation_step += 1
-        else:
+        if self._animation_step >= len(self._path):
             self._animation_in_progress = False
+            return
+
+        if (now := time()) - self._last_animation_update > ANIMATION_SPEED:
+            self._last_animation_update = now
+            self._animation_step += 1
