@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from src.graph import Graph, Node
-from src.visualizer import PathfindingVisualizer
+from graph import Graph, Node
+from visualizer import PathfindingVisualizer
 
 
 def main() -> None:

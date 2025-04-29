@@ -9,7 +9,7 @@ from pygame import Cursor, gfxdraw, Rect, SurfaceType
 from pygame._sdl2 import Window
 from pygame.font import Font
 
-from src.graph import Graph, Node
+from graph import Graph, Node
 
 WINDOW_WIDTH = 1200
 WINDOW_HEIGHT = 720
