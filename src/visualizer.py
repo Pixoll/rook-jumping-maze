@@ -1,6 +1,6 @@
 import sys
 import time
-from math import atan2, cos, radians, sin
+from math import atan2, ceil, cos, radians, sin
 from pathlib import Path
 
 import pygame
@@ -19,6 +19,9 @@ GRID_HEIGHT = 620
 BUTTON_HEIGHT = 40
 BUTTON_WIDTH = 200
 BUTTON_GAP = 10
+HOVER_TUPLE_STEP = 6
+HOVER_TEXT_GAP = 5
+HOVER_TEXT_PADDING = 10
 ANIMATION_SPEED = 0.25
 PI_6_RADIANS = radians(30)
 PI_2_RADIANS = radians(90)
@@ -26,6 +29,7 @@ PI_2_RADIANS = radians(90)
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GOLD = (255, 215, 64)
+GRAY = (128, 128, 128)
 LIGHT_GRAY = (230, 230, 230)
 DFS_COLOR = (255, 192, 192)
 UCS_DISTANCE_COLOR = (255, 192, 128)
@@ -94,7 +98,13 @@ class Algorithm:
     _algorithm_text_position: tuple[int, int]
     _algorithm_color_rect: Rect
     _solution_text_surface: SurfaceType
+    _hover_text_surface: SurfaceType | None
     _solution_text_position: tuple[int, int]
+    _hover_text_position: tuple[int, int] | None
+    _hover_area: Rect | None
+    _popup_text_surfaces: list[SurfaceType]
+    _popup_text_positions: list[tuple[int, int]]
+    _popup_color_rect: Rect | None
     _arrows: list[Arrow]
 
     def __init__(
@@ -109,7 +119,7 @@ class Algorithm:
         self.path = path
         self.color = color
 
-        self._algorithm_text_surface = font.render(f"Algorithm: {name}", True, BLACK)
+        self._algorithm_text_surface = font.render(name, True, BLACK)
         self._algorithm_text_position = (
             WINDOW_MARGIN,
             WINDOW_HEIGHT - WINDOW_MARGIN - self._algorithm_text_surface.get_height()
@@ -127,10 +137,64 @@ class Algorithm:
             True,
             BLACK
         )
+        self._hover_text_surface = font.render("(hover for path)", True, GRAY) if path is not None else None
+
         self._solution_text_position = (
-            (WINDOW_WIDTH - self._solution_text_surface.get_width()) // 2,
+            (WINDOW_WIDTH
+             - self._solution_text_surface.get_width()
+             - self._hover_text_surface.get_width()
+             ) // 2,
             WINDOW_HEIGHT - WINDOW_MARGIN - self._solution_text_surface.get_height()
         )
+
+        self._hover_text_position = (
+            self._solution_text_position[0] + self._solution_text_surface.get_width() + 10,
+            WINDOW_HEIGHT - WINDOW_MARGIN - self._hover_text_surface.get_height()
+        ) if path is not None else None
+
+        self._hover_area = Rect(
+            *self._solution_text_position,
+            self._solution_text_surface.get_width() + self._hover_text_surface.get_width(),
+            self._solution_text_surface.get_height()
+        ) if path is not None else None
+
+        self._popup_text_surfaces = []
+        self._popup_text_positions = []
+
+        if path is not None:
+            left_most = WINDOW_WIDTH
+            top_most = WINDOW_HEIGHT
+            max_width = 0
+            box_height = -HOVER_TEXT_GAP
+
+            for i in range(0, len(path), HOVER_TUPLE_STEP):
+                string = ("-> " if i > 0 else "") + " -> ".join(map(str, path[i:i + HOVER_TUPLE_STEP]))
+                text_surface = font.render(string, True, BLACK)
+                text_position = (
+                    (WINDOW_WIDTH - text_surface.get_width()) // 2,
+                    self._solution_text_position[1]
+                    - HOVER_TEXT_PADDING * 2
+                    - (text_surface.get_height() + HOVER_TEXT_GAP) * ceil((len(path) - i) / HOVER_TUPLE_STEP)
+                )
+
+                left_most = min(left_most, text_position[0])
+                top_most = min(top_most, text_position[1])
+                max_width = max(max_width, text_surface.get_width())
+                box_height += HOVER_TEXT_GAP + text_surface.get_height()
+
+                self._popup_text_surfaces.append(text_surface)
+                self._popup_text_positions.append(text_position)
+
+            self._popup_background_rect = Rect(
+                left_most - HOVER_TEXT_PADDING,
+                top_most - HOVER_TEXT_PADDING,
+                max_width + HOVER_TEXT_PADDING * 2,
+                box_height + HOVER_TEXT_PADDING * 2
+            )
+        else:
+            self._popup_background_rect = None
+
+        self._draw_popup = False
 
         arrow_color = (255 - color[0], 255 - color[1], 255 - color[2])
         self._arrows = []
@@ -156,11 +220,23 @@ class Algorithm:
 
                 self._arrows.append(arrow)
 
+    def on_mouse_motion(self, mouse_pos: tuple[int, int]) -> None:
+        if self.path is not None:
+            self._draw_popup = self._hover_area.collidepoint(mouse_pos)
+
     def draw_text(self, screen: SurfaceType) -> None:
         screen.blit(self._solution_text_surface, self._solution_text_position)
         screen.blit(self._algorithm_text_surface, self._algorithm_text_position)
         pygame.draw.rect(screen, self.color, self._algorithm_color_rect)
         pygame.draw.rect(screen, BLACK, self._algorithm_color_rect, 1)
+
+            screen.blit(self._hover_text_surface, self._hover_text_position)
+
+        if self._draw_popup:
+            pygame.draw.rect(screen, self.color, self._popup_background_rect)
+
+            for i, text_surface in enumerate(self._popup_text_surfaces):
+                screen.blit(text_surface, self._popup_text_positions[i])
 
     def draw_arrows(self, screen: SurfaceType, until: int) -> None:
         for i in range(until):
@@ -416,6 +492,9 @@ class PathfindingVisualizer:
 
                 case pygame.MOUSEMOTION:
                     mouse_pos = pygame.mouse.get_pos()
+
+                    self._algorithms[self._current_algorithm_index].on_mouse_motion(mouse_pos)
+
                     is_hover = (
                             (self._run_algorithm_button.contains(mouse_pos) and self._run_algorithm_button.enabled)
                             or self._next_algorithm_button.contains(mouse_pos)
