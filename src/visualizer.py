@@ -5,15 +5,17 @@ from pathlib import Path
 
 import pygame
 from pygame import Cursor, gfxdraw, Rect, SurfaceType
+# noinspection PyProtectedMember
+from pygame._sdl2 import Window
 from pygame.font import Font
 
 from src.graph import Graph, Node
 
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 600
+WINDOW_WIDTH = 1200
+WINDOW_HEIGHT = 720
 WINDOW_MARGIN = 25
-GRID_WIDTH = 600
-GRID_HEIGHT = 500
+GRID_WIDTH = 900
+GRID_HEIGHT = 620
 BUTTON_HEIGHT = 40
 BUTTON_WIDTH = 200
 BUTTON_GAP = 10
@@ -106,11 +108,14 @@ class Algorithm:
         self.color = color
 
         self._algorithm_text_surface = font.render(f"Algorithm: {name}", True, BLACK)
-        self._algorithm_text_position = (WINDOW_MARGIN, WINDOW_HEIGHT - BUTTON_HEIGHT - WINDOW_MARGIN)
+        self._algorithm_text_position = (
+            WINDOW_MARGIN,
+            WINDOW_HEIGHT - WINDOW_MARGIN - self._algorithm_text_surface.get_height()
+        )
 
         self._algorithm_color_rect = Rect(
             WINDOW_MARGIN + self._algorithm_text_surface.get_width() + 10,
-            WINDOW_HEIGHT - BUTTON_HEIGHT - WINDOW_MARGIN + self._algorithm_text_surface.get_height() // 2 - 10,
+            WINDOW_HEIGHT - WINDOW_MARGIN - self._algorithm_text_surface.get_height() // 2 - 10,
             20,
             20
         )
@@ -134,7 +139,7 @@ class Algorithm:
                     ),
                     arrow_color,
                     3,
-                    10,
+                    cell_size // 10,
                 )
 
                 self._arrows.append(arrow)
@@ -229,9 +234,16 @@ class PathfindingVisualizer:
     _next_algorithm_button: Button
 
     def __init__(self) -> None:
+        global WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT
+
         pygame.init()
-        self._screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+        self._screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), flags=pygame.RESIZABLE)
+        Window.from_display_module().maximize()
         pygame.display.set_caption("Pathfinding Algorithms Visualizer")
+
+        WINDOW_WIDTH, WINDOW_HEIGHT = self._screen.get_size()
+        GRID_WIDTH = WINDOW_WIDTH - 300
+        GRID_HEIGHT = WINDOW_HEIGHT - 120
 
         self._graph = None
         self._grid = {}
@@ -325,7 +337,7 @@ class PathfindingVisualizer:
 
     def _set_graph(self, graph: Graph) -> None:
         self._graph = graph
-        self._cell_size = min(GRID_WIDTH // len(graph.matrix[0]), GRID_HEIGHT // len(graph.matrix))
+        self._cell_size = min(min(GRID_WIDTH // len(graph.matrix[0]), GRID_HEIGHT // len(graph.matrix)), 100)
         self._cell_font = Font(FONT_PATH, self._cell_size // 3)
 
         self._grid = {
