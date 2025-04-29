@@ -142,7 +142,7 @@ class Algorithm:
         self._solution_text_position = (
             (WINDOW_WIDTH
              - self._solution_text_surface.get_width()
-             - self._hover_text_surface.get_width()
+             - (self._hover_text_surface.get_width() if path is not None else 0)
              ) // 2,
             WINDOW_HEIGHT - WINDOW_MARGIN - self._solution_text_surface.get_height()
         )
