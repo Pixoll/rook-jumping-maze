@@ -93,6 +93,8 @@ class Algorithm:
     _algorithm_text_surface: SurfaceType
     _algorithm_text_position: tuple[int, int]
     _algorithm_color_rect: Rect
+    _solution_text_surface: SurfaceType
+    _solution_text_position: tuple[int, int]
     _arrows: list[Arrow]
 
     def __init__(
@@ -120,6 +122,16 @@ class Algorithm:
             20
         )
 
+        self._solution_text_surface = font.render(
+            "No solution found" if path is None else f"Found solution with {len(path) - 1} jumps",
+            True,
+            BLACK
+        )
+        self._solution_text_position = (
+            (WINDOW_WIDTH - self._solution_text_surface.get_width()) // 2,
+            WINDOW_HEIGHT - WINDOW_MARGIN - self._solution_text_surface.get_height()
+        )
+
         arrow_color = (255 - color[0], 255 - color[1], 255 - color[2])
         self._arrows = []
 
@@ -145,6 +157,7 @@ class Algorithm:
                 self._arrows.append(arrow)
 
     def draw_text(self, screen: SurfaceType) -> None:
+        screen.blit(self._solution_text_surface, self._solution_text_position)
         screen.blit(self._algorithm_text_surface, self._algorithm_text_position)
         pygame.draw.rect(screen, self.color, self._algorithm_color_rect)
         pygame.draw.rect(screen, BLACK, self._algorithm_color_rect, 1)
@@ -430,10 +443,6 @@ class PathfindingVisualizer:
         current_algorithm = self._algorithms[self._current_algorithm_index]
         self._path = current_algorithm.path
         self._run_algorithm_button.enabled = self._path is not None
-
-        # TODO display this instead
-        if self._path is None:
-            print(f"No path found with {current_algorithm.name}")
 
     def _update_animation(self) -> None:
         if not self._animation_in_progress or self._path is None:
