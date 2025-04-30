@@ -442,7 +442,7 @@ class PathfindingVisualizer:
                 ),
                 GOLD if node.pos == self._graph.start or node.is_goal else WHITE,
                 self._cell_font,
-                "S" if node.pos == self._graph.start else "G" if node.is_goal else str(node.value)
+                "G" if node.is_goal else str(node.value)
             ) for node in graph.nodes.values()
         }
 
