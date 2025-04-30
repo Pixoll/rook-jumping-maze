@@ -309,7 +309,6 @@ class Cell:
 
 
 class PathfindingVisualizer:
-    _graph: Graph | None
     _grid: dict[tuple[int, int], Cell]
     _cell_size: int
     _screen: SurfaceType
@@ -337,7 +336,6 @@ class PathfindingVisualizer:
         GRID_WIDTH = WINDOW_WIDTH - 300
         GRID_HEIGHT = WINDOW_HEIGHT - 120
 
-        self._graph = None
         self._grid = {}
         self._cell_size = 0
 
@@ -414,7 +412,6 @@ class PathfindingVisualizer:
         pygame.quit()
 
     def _set_graph(self, graph: Graph) -> None:
-        self._graph = graph
         self._cell_size = min(min(GRID_WIDTH // len(graph.matrix[0]), GRID_HEIGHT // len(graph.matrix)), 100)
         self._cell_font = Font(FONT_PATH, self._cell_size // 3)
 
@@ -426,20 +423,20 @@ class PathfindingVisualizer:
                     self._cell_size,
                     self._cell_size
                 ),
-                GOLD if node.pos == self._graph.start or node.is_goal else WHITE,
+                GOLD if node.pos == graph.start or node.is_goal else WHITE,
                 self._cell_font,
                 "G" if node.is_goal else str(node.value)
             ) for node in graph.nodes.values()
         }
 
         self._algorithms = [
-            Algorithm("DFS", self._graph.dfs(), self._font, DFS_COLOR, self._cell_size),
-            Algorithm("UCS (distance)", self._graph.ucs_by_distance(), self._font, UCS_DISTANCE_COLOR, self._cell_size),
-            Algorithm("UCS (jumps)", self._graph.ucs_by_jumps(), self._font, UCS_JUMPS_COLOR, self._cell_size),
-            Algorithm("UCS (value)", self._graph.ucs_by_value(), self._font, UCS_VALUE_COLOR, self._cell_size),
-            Algorithm("BFS", self._graph.bfs(), self._font, BFS_COLOR, self._cell_size),
-            Algorithm("Dijkstra", self._graph.dijkstra(), self._font, DIJKSTRA_COLOR, self._cell_size),
-            Algorithm("A*", self._graph.a_star(), self._font, A_STAR_COLOR, self._cell_size)
+            Algorithm("DFS", graph.dfs(), self._font, DFS_COLOR, self._cell_size),
+            Algorithm("UCS (distance)", graph.ucs_by_distance(), self._font, UCS_DISTANCE_COLOR, self._cell_size),
+            Algorithm("UCS (jumps)", graph.ucs_by_jumps(), self._font, UCS_JUMPS_COLOR, self._cell_size),
+            Algorithm("UCS (value)", graph.ucs_by_value(), self._font, UCS_VALUE_COLOR, self._cell_size),
+            Algorithm("BFS", graph.bfs(), self._font, BFS_COLOR, self._cell_size),
+            Algorithm("Dijkstra", graph.dijkstra(), self._font, DIJKSTRA_COLOR, self._cell_size),
+            Algorithm("A*", graph.a_star(), self._font, A_STAR_COLOR, self._cell_size)
         ]
 
         self._current_algorithm_index = -1
