@@ -253,23 +253,24 @@ class Button:
 
     def __init__(
             self,
-            rect: Rect,
-            background_color: tuple[int, int, int],
-            border_color: tuple[int, int, int],
+            position: tuple[int, int],
             text: str,
             text_font: Font,
-            text_color: tuple[int, int, int]
+            size: tuple[int, int] | None = None,
+            background_color: tuple[int, int, int] | None = None,
+            border_color: tuple[int, int, int] | None = None,
+            text_color: tuple[int, int, int] | None = None,
     ) -> None:
-        self.rect = rect
+        self.rect = Rect(position, size or (BUTTON_WIDTH, BUTTON_HEIGHT))
         self.enabled = True
-        self._background_color = background_color
-        self._border_color = border_color
-        self._text_surface = text_font.render(text, True, text_color)
+        self._background_color = background_color or LIGHT_GRAY
+        self._border_color = border_color or BLACK
+        self._text_surface = text_font.render(text, True, text_color or BLACK)
         self._text_position = (
-            rect.x + rect.width // 2 - self._text_surface.get_width() // 2,
-            rect.y + rect.height // 2 - self._text_surface.get_height() // 2
+            self.rect.x + self.rect.width // 2 - self._text_surface.get_width() // 2,
+            self.rect.y + self.rect.height // 2 - self._text_surface.get_height() // 2
         )
-        self._disabled_overlay = pygame.Surface(rect.size)
+        self._disabled_overlay = pygame.Surface(self.rect.size)
         self._disabled_overlay.set_alpha(128)
         self._disabled_overlay.fill(BLACK)
 
@@ -356,43 +357,28 @@ class PathfindingVisualizer:
         self._hand_cursor = Cursor(pygame.SYSTEM_CURSOR_HAND)
 
         self._run_algorithm_button = Button(
-            Rect(
+            (
                 WINDOW_WIDTH - BUTTON_WIDTH - WINDOW_MARGIN,
                 WINDOW_HEIGHT - BUTTON_HEIGHT - WINDOW_MARGIN,
-                BUTTON_WIDTH,
-                BUTTON_HEIGHT
             ),
-            LIGHT_GRAY,
-            BLACK,
             "Run algorithm",
             self._font,
-            BLACK
         )
         self._next_algorithm_button = Button(
-            Rect(
+            (
                 WINDOW_WIDTH - BUTTON_WIDTH - WINDOW_MARGIN,
                 WINDOW_HEIGHT - 2 * BUTTON_HEIGHT - 2 * WINDOW_MARGIN + BUTTON_GAP,
-                BUTTON_WIDTH,
-                BUTTON_HEIGHT
             ),
-            LIGHT_GRAY,
-            BLACK,
             "Next algorithm",
             self._font,
-            BLACK
         )
         self._next_graph_button = Button(
-            Rect(
+            (
                 WINDOW_WIDTH - BUTTON_WIDTH - WINDOW_MARGIN,
                 WINDOW_HEIGHT - 3 * BUTTON_HEIGHT - 3 * WINDOW_MARGIN + 2 * BUTTON_GAP,
-                BUTTON_WIDTH,
-                BUTTON_HEIGHT
             ),
-            LIGHT_GRAY,
-            BLACK,
             "Next graph",
             self._font,
-            BLACK
         )
 
     def run(self, graph: Graph) -> None:
