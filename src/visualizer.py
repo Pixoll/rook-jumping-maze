@@ -14,7 +14,7 @@ from graph import Graph, Node
 WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 720
 WINDOW_MARGIN = 25
-GRID_WIDTH = 980
+GRID_WIDTH = 755
 GRID_HEIGHT = 620
 BUTTON_HEIGHT = 40
 BUTTON_WIDTH = 200
@@ -113,6 +113,7 @@ class Algorithm:
             path: list[Node] | None,
             font: Font,
             color: tuple[int, int, int],
+            grid_x: int,
             cell_size: int
     ) -> None:
         self.name = name
@@ -120,16 +121,15 @@ class Algorithm:
         self.color = color
 
         self._algorithm_text_surface = font.render(name, True, BLACK)
-        self._algorithm_text_position = (
-            WINDOW_MARGIN,
-            WINDOW_HEIGHT - WINDOW_MARGIN - self._algorithm_text_surface.get_height()
-        )
-
         self._algorithm_color_rect = Rect(
-            WINDOW_MARGIN + self._algorithm_text_surface.get_width() + 10,
+            WINDOW_MARGIN,
             WINDOW_HEIGHT - WINDOW_MARGIN - self._algorithm_text_surface.get_height() // 2 - 10,
             20,
             20
+        )
+        self._algorithm_text_position = (
+            WINDOW_MARGIN + self._algorithm_color_rect.width + 10,
+            WINDOW_HEIGHT - WINDOW_MARGIN - self._algorithm_text_surface.get_height()
         )
 
         self._solution_text_surface = font.render(
@@ -206,11 +206,11 @@ class Algorithm:
 
                 arrow = Arrow(
                     (
-                        WINDOW_MARGIN + previous[1] * cell_size + cell_size // 2,
+                        grid_x + previous[1] * cell_size + cell_size // 2,
                         WINDOW_MARGIN + previous[0] * cell_size + cell_size // 2
                     ),
                     (
-                        WINDOW_MARGIN + current[1] * cell_size + cell_size // 2,
+                        grid_x + current[1] * cell_size + cell_size // 2,
                         WINDOW_MARGIN + current[0] * cell_size + cell_size // 2
                     ),
                     arrow_color,
@@ -324,18 +324,21 @@ class PathfindingVisualizer:
     _animation_step: int
     _show_path: bool
     _run_algorithm_button: Button
+    _previous_algorithm_button: Button
     _next_algorithm_button: Button
+    _previous_graph_button: Button
+    _next_graph_button: Button
 
     def __init__(self, graphs: list[Graph]) -> None:
         global WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT
 
         pygame.init()
         self._screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), flags=pygame.RESIZABLE)
-        # Window.from_display_module().maximize()
+        Window.from_display_module().maximize()
         pygame.display.set_caption("Pathfinding Algorithms Visualizer")
 
         WINDOW_WIDTH, WINDOW_HEIGHT = self._screen.get_size()
-        GRID_WIDTH = WINDOW_WIDTH - 300
+        GRID_WIDTH = WINDOW_WIDTH - BUTTON_WIDTH - WINDOW_MARGIN - 300
         GRID_HEIGHT = WINDOW_HEIGHT - 120
 
         self._graphs = graphs
@@ -366,18 +369,34 @@ class PathfindingVisualizer:
             "Run algorithm",
             self._font,
         )
+        self._previous_algorithm_button = Button(
+            (
+                WINDOW_MARGIN,
+                WINDOW_MARGIN + BUTTON_HEIGHT + BUTTON_GAP,
+            ),
+            "Next algorithm",
+            self._font,
+        )
         self._next_algorithm_button = Button(
             (
                 WINDOW_WIDTH - BUTTON_WIDTH - WINDOW_MARGIN,
-                WINDOW_HEIGHT - 2 * BUTTON_HEIGHT - 2 * WINDOW_MARGIN + BUTTON_GAP,
+                WINDOW_MARGIN + BUTTON_HEIGHT + BUTTON_GAP,
             ),
             "Next algorithm",
+            self._font,
+        )
+        self._previous_graph_button = Button(
+            (
+                WINDOW_MARGIN,
+                WINDOW_MARGIN,
+            ),
+            "Next graph",
             self._font,
         )
         self._next_graph_button = Button(
             (
                 WINDOW_WIDTH - BUTTON_WIDTH - WINDOW_MARGIN,
-                WINDOW_HEIGHT - 3 * BUTTON_HEIGHT - 3 * WINDOW_MARGIN + 2 * BUTTON_GAP,
+                WINDOW_MARGIN,
             ),
             "Next graph",
             self._font,
@@ -397,7 +416,9 @@ class PathfindingVisualizer:
 
             # buttons
             self._run_algorithm_button.draw(self._screen)
+            self._previous_algorithm_button.draw(self._screen)
             self._next_algorithm_button.draw(self._screen)
+            self._previous_graph_button.draw(self._screen)
             self._next_graph_button.draw(self._screen)
 
             # algorithm text
@@ -416,16 +437,19 @@ class PathfindingVisualizer:
     def _set_graph(self, delta: int) -> None:
         self._current_graph_index = (self._current_graph_index + delta) % len(self._graphs)
         graph = self._graphs[self._current_graph_index]
-        self._cell_size = min(min(GRID_WIDTH // len(graph.matrix[0]), GRID_HEIGHT // len(graph.matrix)), 100)
-        self._cell_font = Font(FONT_PATH, self._cell_size // 3)
+        cell_size = min(min(GRID_WIDTH // len(graph.matrix[0]), GRID_HEIGHT // len(graph.matrix)), 100)
+        self._cell_size = cell_size
+        self._cell_font = Font(FONT_PATH, cell_size // 3)
+
+        grid_x = (WINDOW_WIDTH - (len(graph.matrix[0]) * cell_size)) // 2
 
         self._grid = {
             node.pos: Cell(
                 Rect(
-                    WINDOW_MARGIN + node.pos[1] * self._cell_size,
-                    WINDOW_MARGIN + node.pos[0] * self._cell_size,
-                    self._cell_size,
-                    self._cell_size
+                    grid_x + node.pos[1] * cell_size,
+                    WINDOW_MARGIN + node.pos[0] * cell_size,
+                    cell_size,
+                    cell_size
                 ),
                 GOLD if node.pos == graph.start or node.is_goal else WHITE,
                 self._cell_font,
@@ -434,16 +458,15 @@ class PathfindingVisualizer:
         }
 
         self._algorithms = [
-            Algorithm("DFS", graph.dfs(), self._font, DFS_COLOR, self._cell_size),
-            Algorithm("UCS (distance)", graph.ucs_by_distance(), self._font, UCS_DISTANCE_COLOR, self._cell_size),
-            Algorithm("UCS (jumps)", graph.ucs_by_jumps(), self._font, UCS_JUMPS_COLOR, self._cell_size),
-            Algorithm("UCS (value)", graph.ucs_by_value(), self._font, UCS_VALUE_COLOR, self._cell_size),
-            Algorithm("BFS", graph.bfs(), self._font, BFS_COLOR, self._cell_size),
-            Algorithm("Dijkstra", graph.dijkstra(), self._font, DIJKSTRA_COLOR, self._cell_size),
-            Algorithm("A*", graph.a_star(), self._font, A_STAR_COLOR, self._cell_size)
+            Algorithm("DFS", graph.dfs(), self._font, DFS_COLOR, grid_x, cell_size),
+            Algorithm("UCS (distance)", graph.ucs_by_distance(), self._font, UCS_DISTANCE_COLOR, grid_x, cell_size),
+            Algorithm("UCS (jumps)", graph.ucs_by_jumps(), self._font, UCS_JUMPS_COLOR, grid_x, cell_size),
+            Algorithm("UCS (value)", graph.ucs_by_value(), self._font, UCS_VALUE_COLOR, grid_x, cell_size),
+            Algorithm("BFS", graph.bfs(), self._font, BFS_COLOR, grid_x, cell_size),
+            Algorithm("Dijkstra", graph.dijkstra(), self._font, DIJKSTRA_COLOR, grid_x, cell_size),
+            Algorithm("A*", graph.a_star(), self._font, A_STAR_COLOR, grid_x, cell_size)
         ]
 
-        self._current_algorithm_index = 0
         self._set_algorithm(0)
 
     def _set_algorithm(self, delta: int) -> None:
@@ -484,8 +507,16 @@ class PathfindingVisualizer:
                         self._start_animation()
                         continue
 
+                    if self._previous_algorithm_button.contains(mouse_pos):
+                        self._set_algorithm(-1)
+                        continue
+
                     if self._next_algorithm_button.contains(mouse_pos):
                         self._set_algorithm(1)
+                        continue
+
+                    if self._previous_graph_button.contains(mouse_pos):
+                        self._set_graph(-1)
                         continue
 
                     if self._next_graph_button.contains(mouse_pos):
@@ -499,7 +530,9 @@ class PathfindingVisualizer:
 
                     is_hover = (
                             (self._run_algorithm_button.contains(mouse_pos) and self._run_algorithm_button.enabled)
+                            or self._previous_algorithm_button.contains(mouse_pos)
                             or self._next_algorithm_button.contains(mouse_pos)
+                            or self._previous_graph_button.contains(mouse_pos)
                             or self._next_graph_button.contains(mouse_pos)
                     )
 
