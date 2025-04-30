@@ -569,7 +569,7 @@ class PathfindingVisualizer:
 
         self._show_path = True
         self._animation_in_progress = True
-        self._last_animation_update = 0
+        self._last_animation_update = time()
         self._animation_step = 0
 
     def _update_animation(self) -> None:
