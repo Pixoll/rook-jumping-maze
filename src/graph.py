@@ -196,7 +196,7 @@ class Graph:
 
             for edge in node.edges:
                 neighbour = edge.dest
-                tentative_g_score = g_scores[node] + edge.length
+                tentative_g_score = g_scores[node] + 1
 
                 if neighbour not in g_scores or tentative_g_score < g_scores[neighbour]:
                     parents[neighbour] = node
