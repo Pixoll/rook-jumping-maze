@@ -15,10 +15,10 @@ from graph import Graph, Node
 WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 720
 WINDOW_MARGIN = 25
-GRID_WIDTH = 755
+GRID_WIDTH = 700
 GRID_HEIGHT = 620
 BUTTON_HEIGHT = 40
-BUTTON_WIDTH = 200
+BUTTON_WIDTH = 250
 BUTTON_GAP = 10
 HOVER_TUPLE_STEP = 6
 HOVER_TEXT_GAP = 5
@@ -373,7 +373,7 @@ class PathfindingVisualizer:
         pygame.display.set_caption("Pathfinding Algorithms Visualizer")
 
         WINDOW_WIDTH, WINDOW_HEIGHT = self._screen.get_size()
-        GRID_WIDTH = WINDOW_WIDTH - BUTTON_WIDTH - WINDOW_MARGIN - 300
+        GRID_WIDTH = WINDOW_WIDTH - 2 * BUTTON_WIDTH - 4 * WINDOW_MARGIN
         GRID_HEIGHT = WINDOW_HEIGHT - 120
 
         font = Font(FONT_PATH, 20)
@@ -402,7 +402,7 @@ class PathfindingVisualizer:
                 WINDOW_MARGIN,
                 WINDOW_MARGIN + BUTTON_HEIGHT + BUTTON_GAP,
             ),
-            "Next algorithm",
+            "Previous algorithm",
             font,
         )
         self._next_algorithm_button = Button(
@@ -418,7 +418,7 @@ class PathfindingVisualizer:
                 WINDOW_MARGIN,
                 WINDOW_MARGIN,
             ),
-            "Next graph",
+            "Previous graph",
             font,
         )
         self._next_graph_button = Button(
