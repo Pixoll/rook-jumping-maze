@@ -206,7 +206,11 @@ class Graph:
 
     def __repr__(self) -> str:
         header = f"Graph({len(self.matrix)}x{len(self.matrix[0])}, {self.start} -> {self._goal}):"
-        matrix = "\n".join(map(lambda row: " ".join(["G" if v == 0 else str(v) for v in row]), self.matrix))
+        value_length = max(map(lambda node: node.value // 10 + 1, self.nodes.values()))
+        matrix = "\n".join(map(
+            lambda row: " ".join([("G" if v == 0 else str(v)).rjust(value_length, " ") for v in row]),
+            self.matrix
+        ))
         return header + "\n" + matrix
 
     def _ucs(self, increment: Callable[[Edge], int]) -> list[Node] | None:
