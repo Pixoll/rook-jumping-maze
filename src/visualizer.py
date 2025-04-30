@@ -261,9 +261,10 @@ class Button:
             background_color: tuple[int, int, int] | None = None,
             border_color: tuple[int, int, int] | None = None,
             text_color: tuple[int, int, int] | None = None,
+            enabled: bool = True,
     ) -> None:
         self.rect = Rect(position, size or (BUTTON_WIDTH, BUTTON_HEIGHT))
-        self.enabled = True
+        self.enabled = enabled
         self._background_color = background_color or LIGHT_GRAY
         self._border_color = border_color or BLACK
         self._text_surface = text_font.render(text, True, text_color or BLACK)
@@ -404,6 +405,7 @@ class PathfindingVisualizer:
             ),
             "Previous algorithm",
             font,
+            enabled=False,
         )
         self._next_algorithm_button = Button(
             (
@@ -412,6 +414,7 @@ class PathfindingVisualizer:
             ),
             "Next algorithm",
             font,
+            enabled=len(graphs) > 1,
         )
         self._previous_graph_button = Button(
             (
@@ -420,6 +423,7 @@ class PathfindingVisualizer:
             ),
             "Previous graph",
             font,
+            enabled=False,
         )
         self._next_graph_button = Button(
             (
@@ -428,6 +432,7 @@ class PathfindingVisualizer:
             ),
             "Next graph",
             font,
+            enabled=len(graphs) > 1,
         )
 
     def run(self) -> None:
@@ -473,16 +478,20 @@ class PathfindingVisualizer:
         return self._current_algorithm.path
 
     def _set_graph(self, delta: int) -> None:
-        self._current_graph_index = (self._current_graph_index + delta) % len(self._grids)
+        self._current_graph_index += delta
+        self._previous_graph_button.enabled = self._current_graph_index > 0
+        self._next_graph_button.enabled = self._current_graph_index < len(self._grids) - 1
         self._set_algorithm(0)
 
     def _set_algorithm(self, delta: int) -> None:
+        self._current_algorithm_index += delta
         self._show_path = False
         self._animation_in_progress = False
         self._last_animation_update = 0
         self._animation_step = 0
-        self._current_algorithm_index = (self._current_algorithm_index + delta) % len(self._current_grid.algorithms)
         self._run_algorithm_button.enabled = self._path is not None
+        self._previous_algorithm_button.enabled = self._current_algorithm_index > 0
+        self._next_algorithm_button.enabled = self._current_algorithm_index < len(self._current_grid.algorithms) - 1
 
     def _draw_path(self) -> None:
         if not self._show_path:
@@ -510,19 +519,19 @@ class PathfindingVisualizer:
                         self._start_animation()
                         continue
 
-                    if self._previous_algorithm_button.contains(mouse_pos):
+                    if self._previous_algorithm_button.contains(mouse_pos) and self._previous_algorithm_button.enabled:
                         self._set_algorithm(-1)
                         continue
 
-                    if self._next_algorithm_button.contains(mouse_pos):
+                    if self._next_algorithm_button.contains(mouse_pos) and self._next_algorithm_button.enabled:
                         self._set_algorithm(1)
                         continue
 
-                    if self._previous_graph_button.contains(mouse_pos):
+                    if self._previous_graph_button.contains(mouse_pos) and self._previous_graph_button.enabled:
                         self._set_graph(-1)
                         continue
 
-                    if self._next_graph_button.contains(mouse_pos):
+                    if self._next_graph_button.contains(mouse_pos) and self._next_graph_button.enabled:
                         self._set_graph(1)
                         continue
 
@@ -532,11 +541,16 @@ class PathfindingVisualizer:
                     self._current_algorithm.on_mouse_motion(mouse_pos)
 
                     is_hover = (
-                            (self._run_algorithm_button.contains(mouse_pos) and self._run_algorithm_button.enabled)
-                            or self._previous_algorithm_button.contains(mouse_pos)
-                            or self._next_algorithm_button.contains(mouse_pos)
-                            or self._previous_graph_button.contains(mouse_pos)
-                            or self._next_graph_button.contains(mouse_pos)
+                            (self._run_algorithm_button.contains(mouse_pos)
+                             and self._run_algorithm_button.enabled)
+                            or (self._previous_algorithm_button.contains(mouse_pos)
+                                and self._previous_algorithm_button.enabled)
+                            or (self._next_algorithm_button.contains(mouse_pos)
+                                and self._next_algorithm_button.enabled)
+                            or (self._previous_graph_button.contains(mouse_pos)
+                                and self._previous_graph_button.enabled)
+                            or (self._next_graph_button.contains(mouse_pos)
+                                and self._next_graph_button.enabled)
                     )
 
                     pygame.mouse.set_cursor(self._hand_cursor if is_hover else self._arrow_cursor)
