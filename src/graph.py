@@ -10,11 +10,11 @@ class Node:
     is_goal: bool
     edges: list['Edge']
 
-    def __init__(self, pos: tuple[int, int], value: int, heuristic: int = 0, is_goal: bool = False) -> None:
+    def __init__(self, pos: tuple[int, int], value: int, goal: tuple[int, int], max_jump: int) -> None:
         self.pos = pos
         self.value = value
-        self.heuristic = heuristic
-        self.is_goal = is_goal
+        self.heuristic = (abs(pos[0] - goal[0]) + abs(pos[1] - goal[1])) // (max_jump - 1)
+        self.is_goal = pos == goal
         self.edges = []
 
     # for PriorityQueue, do not remove
@@ -45,7 +45,6 @@ class Graph:
     matrix: list[list[int]]
     start: tuple[int, int]
     _goal: tuple[int, int]
-    _max_jump: int
     _root: Node
 
     def __init__(self, matrix: list[list[int]], start: tuple[int, int], goal: tuple[int, int]) -> None:
@@ -53,14 +52,12 @@ class Graph:
         self.matrix = matrix
         self.start = start
         self._goal = goal
-        self._max_jump = max([max(row) for row in matrix])
+        max_jump = max([max(row) for row in matrix])
 
         for i, row in enumerate(matrix):
             for j, length in enumerate(row):
                 pos = (i, j)
-                node = self.nodes[pos] if pos in self.nodes else Node(
-                    pos, matrix[i][j], heuristic=self._get_heuristic(pos), is_goal=pos == goal
-                )
+                node = self.nodes[pos] if pos in self.nodes else Node(pos, matrix[i][j], goal, max_jump)
                 self.nodes[pos] = node
 
                 if length == 0:
@@ -72,9 +69,8 @@ class Graph:
                     n_pos = (ni, nj)
 
                     if 0 <= ni < len(matrix) and 0 <= nj < len(row):
-                        neighbour = self.nodes[n_pos] if n_pos in self.nodes else Node(
-                            n_pos, matrix[ni][nj], heuristic=self._get_heuristic(n_pos), is_goal=n_pos == goal
-                        )
+                        neighbour = (self.nodes[n_pos] if n_pos in self.nodes
+                                     else Node(n_pos, matrix[ni][nj], goal, max_jump))
                         self.nodes[n_pos] = neighbour
                         edge = Edge(neighbour, length)
                         node.edges.append(edge)
@@ -232,9 +228,6 @@ class Graph:
                     pq.put((total + increment(edge), neighbour, path + [neighbour]))
 
         return final_path
-
-    def _get_heuristic(self, pos: tuple[int, int]) -> int:
-        return (abs(pos[0] - self._goal[0]) + abs(pos[1] - self._goal[1])) // (self._max_jump - 1)
 
     @staticmethod
     def _get_path(parents: dict[Node, Node | None], goal: Node | None) -> list[Node] | None:
