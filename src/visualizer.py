@@ -216,7 +216,7 @@ class Algorithm:
                     ),
                     arrow_color,
                     3,
-                    cell_size // 10,
+                    int(cell_size / 7.5),
                 )
 
                 self._arrows.append(arrow)
