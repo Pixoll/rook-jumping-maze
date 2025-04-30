@@ -350,7 +350,6 @@ class Grid:
 
 
 class PathfindingVisualizer:
-    _font: Font
     _grids: list[Grid]
     _current_graph_index: int
     _screen: SurfaceType
@@ -377,8 +376,8 @@ class PathfindingVisualizer:
         GRID_WIDTH = WINDOW_WIDTH - BUTTON_WIDTH - WINDOW_MARGIN - 300
         GRID_HEIGHT = WINDOW_HEIGHT - 120
 
-        self._font = Font(FONT_PATH, 20)
-        self._grids = [Grid(graph, self._font) for graph in graphs]
+        font = Font(FONT_PATH, 20)
+        self._grids = [Grid(graph, font) for graph in graphs]
         self._current_graph_index = 0
 
         self._current_algorithm_index = 0
@@ -396,7 +395,7 @@ class PathfindingVisualizer:
                 WINDOW_HEIGHT - BUTTON_HEIGHT - WINDOW_MARGIN,
             ),
             "Run algorithm",
-            self._font,
+            font,
         )
         self._previous_algorithm_button = Button(
             (
@@ -404,7 +403,7 @@ class PathfindingVisualizer:
                 WINDOW_MARGIN + BUTTON_HEIGHT + BUTTON_GAP,
             ),
             "Next algorithm",
-            self._font,
+            font,
         )
         self._next_algorithm_button = Button(
             (
@@ -412,7 +411,7 @@ class PathfindingVisualizer:
                 WINDOW_MARGIN + BUTTON_HEIGHT + BUTTON_GAP,
             ),
             "Next algorithm",
-            self._font,
+            font,
         )
         self._previous_graph_button = Button(
             (
@@ -420,7 +419,7 @@ class PathfindingVisualizer:
                 WINDOW_MARGIN,
             ),
             "Next graph",
-            self._font,
+            font,
         )
         self._next_graph_button = Button(
             (
@@ -428,7 +427,7 @@ class PathfindingVisualizer:
                 WINDOW_MARGIN,
             ),
             "Next graph",
-            self._font,
+            font,
         )
 
     def run(self) -> None:
