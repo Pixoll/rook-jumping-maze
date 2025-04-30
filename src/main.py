@@ -5,8 +5,6 @@ from visualizer import PathfindingVisualizer
 
 
 def main() -> None:
-    visualizer = PathfindingVisualizer()
-
     root_path = Path(__file__).parent.parent.resolve()
     input_path = root_path / "input.txt"
     lines: list[str] = []
@@ -15,6 +13,7 @@ def main() -> None:
         lines += input_file.read().splitlines()
 
     line_index = 0
+    graphs: list[Graph] = []
 
     while line_index < len(lines) and lines[line_index].strip() != "0":
         rows, cols, start_i, start_j, goal_i, goal_j = map(int, lines[line_index].split())
@@ -30,14 +29,18 @@ def main() -> None:
             line_index += 1
 
         graph = Graph(matrix, (start_i, start_j), (goal_i, goal_j))
+        graphs.append(graph)
 
         print(graph)
         print()
         print_results(graph, ["dfs", "ucs_by_distance", "ucs_by_jumps", "ucs_by_value", "bfs", "dijkstra", "a_star"])
         print()
 
-        visualizer.run(graph)
+    if len(graphs) == 0:
+        raise Exception("No graphs found")
 
+    visualizer = PathfindingVisualizer(graphs)
+    visualizer.run()
     visualizer.quit()
 
 

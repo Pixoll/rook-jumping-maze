@@ -309,6 +309,8 @@ class Cell:
 
 
 class PathfindingVisualizer:
+    _graphs: list[Graph]
+    _current_graph_index: int
     _grid: dict[tuple[int, int], Cell]
     _cell_size: int
     _screen: SurfaceType
@@ -324,18 +326,20 @@ class PathfindingVisualizer:
     _run_algorithm_button: Button
     _next_algorithm_button: Button
 
-    def __init__(self) -> None:
+    def __init__(self, graphs: list[Graph]) -> None:
         global WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT
 
         pygame.init()
         self._screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), flags=pygame.RESIZABLE)
-        Window.from_display_module().maximize()
+        # Window.from_display_module().maximize()
         pygame.display.set_caption("Pathfinding Algorithms Visualizer")
 
         WINDOW_WIDTH, WINDOW_HEIGHT = self._screen.get_size()
         GRID_WIDTH = WINDOW_WIDTH - 300
         GRID_HEIGHT = WINDOW_HEIGHT - 120
 
+        self._graphs = graphs
+        self._current_graph_index = 0
         self._grid = {}
         self._cell_size = 0
 
@@ -379,15 +383,13 @@ class PathfindingVisualizer:
             self._font,
         )
 
-    def run(self, graph: Graph) -> None:
-        self._set_graph(graph)
+        self._set_graph(0)
 
+    def run(self) -> None:
         while True:
             self._screen.fill(WHITE)
 
-            should_exit = self._handle_events()
-            if should_exit:
-                break
+            self._handle_events()
 
             # grid
             for cell in self._grid.values():
@@ -411,7 +413,9 @@ class PathfindingVisualizer:
     def quit() -> None:
         pygame.quit()
 
-    def _set_graph(self, graph: Graph) -> None:
+    def _set_graph(self, delta: int) -> None:
+        self._current_graph_index = (self._current_graph_index + delta) % len(self._graphs)
+        graph = self._graphs[self._current_graph_index]
         self._cell_size = min(min(GRID_WIDTH // len(graph.matrix[0]), GRID_HEIGHT // len(graph.matrix)), 100)
         self._cell_font = Font(FONT_PATH, self._cell_size // 3)
 
@@ -439,8 +443,19 @@ class PathfindingVisualizer:
             Algorithm("A*", graph.a_star(), self._font, A_STAR_COLOR, self._cell_size)
         ]
 
-        self._current_algorithm_index = -1
-        self._update_algorithm()
+        self._current_algorithm_index = 0
+        self._set_algorithm(0)
+
+    def _set_algorithm(self, delta: int) -> None:
+        self._show_path = False
+        self._animation_in_progress = False
+        self._last_animation_update = 0
+        self._animation_step = 0
+        self._current_algorithm_index = (self._current_algorithm_index + delta) % len(self._algorithms)
+
+        current_algorithm = self._algorithms[self._current_algorithm_index]
+        self._path = current_algorithm.path
+        self._run_algorithm_button.enabled = self._path is not None
 
     def _draw_path(self) -> None:
         if not self._show_path:
@@ -455,7 +470,7 @@ class PathfindingVisualizer:
 
         current_algorithm.draw_arrows(self._screen, range_end - 1)
 
-    def _handle_events(self) -> bool:
+    def _handle_events(self) -> None:
         for event in pygame.event.get():
             match event.type:
                 case pygame.QUIT:
@@ -470,11 +485,12 @@ class PathfindingVisualizer:
                         continue
 
                     if self._next_algorithm_button.contains(mouse_pos):
-                        self._update_algorithm()
+                        self._set_algorithm(1)
                         continue
 
                     if self._next_graph_button.contains(mouse_pos):
-                        return True
+                        self._set_graph(1)
+                        continue
 
                 case pygame.MOUSEMOTION:
                     mouse_pos = pygame.mouse.get_pos()
@@ -489,8 +505,6 @@ class PathfindingVisualizer:
 
                     pygame.mouse.set_cursor(self._hand_cursor if is_hover else self._arrow_cursor)
 
-        return False
-
     def _start_animation(self) -> None:
         if self._animation_in_progress or self._path is None:
             return
@@ -499,17 +513,6 @@ class PathfindingVisualizer:
         self._animation_in_progress = True
         self._last_animation_update = 0
         self._animation_step = 0
-
-    def _update_algorithm(self) -> None:
-        self._show_path = False
-        self._animation_in_progress = False
-        self._last_animation_update = 0
-        self._animation_step = 0
-        self._current_algorithm_index = (self._current_algorithm_index + 1) % len(self._algorithms)
-
-        current_algorithm = self._algorithms[self._current_algorithm_index]
-        self._path = current_algorithm.path
-        self._run_algorithm_button.enabled = self._path is not None
 
     def _update_animation(self) -> None:
         if not self._animation_in_progress or self._path is None:
