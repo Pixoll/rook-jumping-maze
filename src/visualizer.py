@@ -521,18 +521,26 @@ class PathfindingVisualizer:
 
                     if self._previous_algorithm_button.contains(mouse_pos) and self._previous_algorithm_button.enabled:
                         self._set_algorithm(-1)
+                        if not self._previous_algorithm_button.enabled:
+                            pygame.mouse.set_cursor(self._arrow_cursor)
                         continue
 
                     if self._next_algorithm_button.contains(mouse_pos) and self._next_algorithm_button.enabled:
                         self._set_algorithm(1)
+                        if not self._next_algorithm_button.enabled:
+                            pygame.mouse.set_cursor(self._arrow_cursor)
                         continue
 
                     if self._previous_graph_button.contains(mouse_pos) and self._previous_graph_button.enabled:
                         self._set_graph(-1)
+                        if not self._previous_graph_button.enabled:
+                            pygame.mouse.set_cursor(self._arrow_cursor)
                         continue
 
                     if self._next_graph_button.contains(mouse_pos) and self._next_graph_button.enabled:
                         self._set_graph(1)
+                        if not self._next_graph_button.enabled:
+                            pygame.mouse.set_cursor(self._arrow_cursor)
                         continue
 
                 case pygame.MOUSEMOTION:
