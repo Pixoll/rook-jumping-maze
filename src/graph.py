@@ -186,7 +186,7 @@ class Graph:
         pq.put((0, self._root))
 
         while not pq.empty():
-            g_score, node = pq.get()
+            _, node = pq.get()
 
             if node.is_goal:
                 goal = node
@@ -194,13 +194,13 @@ class Graph:
 
             for edge in node.edges:
                 neighbour = edge.dest
-                tentative_g_score = g_score + edge.length
+                tentative_g_score = g_scores[node] + edge.length
 
                 if neighbour not in g_scores or tentative_g_score < g_scores[neighbour]:
                     parents[neighbour] = node
                     g_scores[neighbour] = tentative_g_score
                     f_scores[neighbour] = tentative_g_score + neighbour.heuristic
-                    pq.put((tentative_g_score, neighbour))
+                    pq.put((f_scores[neighbour], neighbour))
 
         return self._get_path(parents, goal)
 
