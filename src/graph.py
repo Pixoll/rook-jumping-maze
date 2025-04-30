@@ -176,6 +176,7 @@ class Graph:
         return self._get_path(parents, goal)
 
     def a_star(self) -> list[Node] | None:
+        visited: set[Node] = set()
         g_scores: dict[Node, float] = {self._root: 0}
         f_scores: dict[Node, float] = {self._root: self._root.heuristic}
 
@@ -188,9 +189,14 @@ class Graph:
         while not pq.empty():
             _, node = pq.get()
 
+            if node in visited:
+                continue
+
             if node.is_goal:
                 goal = node
                 break
+
+            visited.add(node)
 
             for edge in node.edges:
                 neighbour = edge.dest
