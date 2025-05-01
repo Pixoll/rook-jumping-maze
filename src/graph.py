@@ -173,13 +173,13 @@ class Graph:
 
     def a_star(self) -> list[Node] | None:
         visited: set[Node] = set()
-        g_scores: dict[Node, float] = {self._root: 0}
-        f_scores: dict[Node, float] = {self._root: self._root.heuristic}
+        g_scores: dict[Node, int] = {self._root: 0}
+        f_scores: dict[Node, int] = {self._root: self._root.heuristic}
 
         parents: dict[Node, Node | None] = {self._root: None}
         goal: Node | None = None
 
-        pq: PriorityQueue[tuple[float, Node]] = PriorityQueue()
+        pq: PriorityQueue[tuple[int, Node]] = PriorityQueue()
         pq.put((0, self._root))
 
         while not pq.empty():
