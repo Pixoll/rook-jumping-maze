@@ -1,6 +1,8 @@
 import sys
 from collections.abc import Iterator, Sequence
 from math import atan2, ceil, cos, radians, sin
+from os import mkdir
+from os.path import exists
 from pathlib import Path
 from time import time
 
@@ -41,6 +43,7 @@ DIJKSTRA_COLOR = (128, 192, 255)
 A_STAR_COLOR = (255, 192, 255)
 
 ROOT_PATH = Path(__file__).parent.parent.resolve()
+IMAGES_PATH = ROOT_PATH / "images"
 FONT_PATH = ROOT_PATH / "resources/fonts/JetBrainsMono-Regular.ttf"
 
 
@@ -368,6 +371,9 @@ class PathfindingVisualizer:
     def __init__(self, graphs: list[Graph]) -> None:
         global WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT
 
+        if not exists(IMAGES_PATH):
+            mkdir(IMAGES_PATH)
+
         pygame.init()
         self._screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), flags=pygame.RESIZABLE)
         Window.from_display_module().maximize()
@@ -437,9 +443,9 @@ class PathfindingVisualizer:
 
     def run(self) -> None:
         while True:
-            self._screen.fill(WHITE)
-
             self._handle_events()
+
+            self._screen.fill(WHITE)
 
             # grid
             for cell in self._current_grid:
@@ -452,12 +458,12 @@ class PathfindingVisualizer:
             self._previous_graph_button.draw(self._screen)
             self._next_graph_button.draw(self._screen)
 
-            # algorithm text
-            self._current_algorithm.draw_text(self._screen)
-
             # path animation
             self._draw_path()
             self._update_animation()
+
+            # algorithm text
+            self._current_algorithm.draw_text(self._screen)
 
             pygame.display.flip()
 
@@ -562,6 +568,19 @@ class PathfindingVisualizer:
                     )
 
                     pygame.mouse.set_cursor(self._hand_cursor if is_hover else self._arrow_cursor)
+
+                case pygame.KEYDOWN:
+                    if event.key != pygame.K_F2:
+                        continue
+
+                    algorithm_name = (self._current_algorithm.name
+                                      .lower()
+                                      .replace("(", "")
+                                      .replace(")", "")
+                                      .replace(" ", "_")
+                                      .replace("*", "_star"))
+                    filename = IMAGES_PATH / f"{algorithm_name}-{self._current_graph_index + 1}.png"
+                    pygame.image.save(self._screen, filename)
 
     def _start_animation(self) -> None:
         if self._animation_in_progress or self._path is None:
